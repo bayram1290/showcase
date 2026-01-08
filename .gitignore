@@ -1,0 +1,29 @@
+# So, for project: /var/www/demo_a/.gitignore
+
+# Sensitive config files
+.env
+.env.*
+*.key
+*.pem
+*.crt
+
+# DB files
+.sql
+.sqllite
+data/
+mysql_data/
+volumes/
+!volumes/.gitignore
+
+# IDE & OS
+.DS_Store
+.vscode
+.idea
+*.swp
+*.swo
+*~
+Thumbs.db
+
+# Logs
+*.log
+logs/

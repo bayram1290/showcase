@@ -1,0 +1,108 @@
+1. Customer Application → Applicant submits personal/business details, loan amount, purpose
+2. Document Upload → Income proof, ID, bank statements, collateral documents
+3. Credit Check → Automated scoring, external credit bureau integration
+4. Risk Assessment → Manual review by loan officers, verification calls
+5. Approval Workflow → Multi-level approval based on loan amount
+6. Disbursement → Funds transfer upon approval
+7. Repayment Tracking → EMI schedules, payment processing
+8. Collections → Late payment handling, reminders
+
+
+// Database/migrations/
+1. users (with role: applicant, officer, manager, admin)
+2. loans (status: pending, under_review, approved, rejected, disbursed, closed)
+3. loan_applications
+4. documents
+5. credit_scores
+6. repayments
+7. transactions
+8. approvals (workflow)
+9. notifications
+10. audit_logs
+
+=====================================================
+
+1. Authentication & User Management
+// API Routes
+POST   /api/auth/register      // Applicant registration
+POST   /api/auth/login         // All users login
+POST   /api/auth/logout        // Sanctum-based logout
+GET    /api/user/profile       // Get user profile
+PUT    /api/user/profile       // Update profile
+
+2. Loan Application Flow
+POST   /api/loans/apply        // Submit new loan application
+GET    /api/loans/my-applications // User's applications
+GET    /api/loans/{id}         // Get specific application
+PUT    /api/loans/{id}/cancel  // Cancel application
+POST   /api/loans/{id}/documents // Upload supporting docs
+
+3. Document Management
+POST   /api/documents/upload   // Secure document upload
+GET    /api/documents/{id}     // View document (with permission)
+DELETE /api/documents/{id}     // Remove document
+POST   /api/documents/verify   // Officer marks doc as verified
+
+4. Credit Assessment API
+POST   /api/credit-check       // Internal scoring algorithm
+GET    /api/credit-score/{user_id} // Get credit score
+POST   /api/external-credit    // Mock external bureau integration
+
+5. Approval Workflow
+GET    /api/admin/pending-loans // List pending applications
+POST   /api/admin/assign/{loan_id}/{officer_id} // Assign to officer
+POST   /api/admin/review       // Submit review notes
+POST   /api/admin/approve      // Approve (with hierarchy check)
+POST   /api/admin/reject       // Reject with reason
+GET    /api/admin/approval-history // Audit trail
+
+6. Disbursement & Payment
+POST   /api/disbursement/{loan_id} // Release funds
+GET    /api/repayment-schedule/{loan_id} // EMI schedule
+POST   /api/repayment/pay      // Record payment
+GET    /api/repayment/history/{loan_id} // Payment history
+POST   /api/repayment/reminder // Send payment reminder
+
+7. Reporting & Analytics
+GET    /api/reports/loans-overview // Dashboard stats
+GET    /api/reports/npa           // Non-performing assets
+GET    /api/reports/approved-loans // Approved loans report
+GET    /api/reports/export-excel  // Export to Excel
+GET    /api/reports/generate-pdf  // Generate PDF statement
+
+============================================================
+
+Scheme of the project:
+/var/www/demo_a/backend/
+├── app/
+│   ├── Http/
+│   │   ├── Controllers/
+│   │   │   └── API/
+│   │   │       ├── AuthController.php
+│   │   │       ├── LoanApplicationController.php
+│   │   │       ├── DocumentController.php
+│   │   │       ├── CreditCheckController.php
+│   │   │       ├── LoanAccountController.php
+│   │   │       ├── DashboardController.php
+│   │   │       └── AdminController.php
+│   │   └── Middleware/
+│   │       └── CheckRole.php
+│   └── Models/
+│       ├── User.php
+│       ├── LoanProduct.php
+│       ├── LoanApplication.php
+│       ├── Document.php
+│       ├── CreditCheck.php
+│       ├── LoanAccount.php
+│       ├── Installment.php
+│       └── AuditLog.php
+├── database/
+│   ├── migrations/
+│   └── seeders/
+├── routes/
+│   └── api.php
+├── storage/
+│   └── app/
+│       └── documents/  # Uploaded documents
+└── public/
+    └── storage/       # Symlink to storage/app/public

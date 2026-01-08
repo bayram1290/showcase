@@ -19,3 +19,26 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+
+## 12. Usage Instructions
+
+### Initial Setup:
+```bash
+# 1. Clone or create the project structure
+mkdir laravel-docker-api
+cd laravel-docker-api
+
+# 2. Create all the files as shown above
+
+# 3. Make the setup script executable
+chmod +x setup.sh
+
+# 4. Run setup
+./setup.sh
+
+# Or manually:
+docker-compose up -d --build
+docker-compose exec app composer install
+docker-compose exec app php artisan key:generate
+docker-compose exec app php artisan migrate
