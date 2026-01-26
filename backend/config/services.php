@@ -34,5 +34,9 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+    'api' => [
+        'app_debug_mode' => env('APP_DEBUG'),
+        'app_env_mode' => env('APP_ENV'),
+    ]
 
 ];

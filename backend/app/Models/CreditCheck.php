@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CreditCheck extends Model
 {
-    
+
     protected $fillable = [
         'loan_application_id',
         'credit_score',

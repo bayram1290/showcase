@@ -11,13 +11,19 @@ RUN apk add --no-cache \
     oniguruma-dev \
     freetype-dev \
     libjpeg-turbo-dev \
-    postgresql-dev \
-    libzip-dev
+    # postgresql-dev \
+    libzip-dev \
+    mysql-client \
+    mariadb-connector-c \
+    libintl \
+    icu-dev \
+    libmcrypt-dev
 
 # Install PHP extensions
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
     pdo_mysql \
+    mysqli \
     mbstring \
     exif \
     pcntl \

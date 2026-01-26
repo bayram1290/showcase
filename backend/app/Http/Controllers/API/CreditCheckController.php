@@ -12,12 +12,7 @@ use Illuminate\Support\Facades\Validator;
 
 class CreditCheckController extends Controller
 {
-    protected $middleware = ['auth:sanctum'];
     protected $min_credit_score = 600;
-
-    public function __construct() {
-        $this->middleware($this->middleware);
-    }
 
     public function performCreditCheck(Request $request, $application_id): JsonResponse {
 

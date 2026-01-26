@@ -2,11 +2,15 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Document extends Model
 {
+    use HasFactory;
+
     protected $fillable = [
         'loan_application_id',
         'document_type',
@@ -49,7 +53,7 @@ class Document extends Model
             'is_verified' => true,
             'verification_notes' => $notes,
             'verified_by' => $user_id,
-            'verified_at' => now()
+            'verified_at' => Carbon::now()
         ]);
     }
 

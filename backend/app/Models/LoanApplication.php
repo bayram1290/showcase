@@ -2,8 +2,12 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Str;
 
 class LoanApplication extends Model
@@ -48,53 +52,52 @@ class LoanApplication extends Model
         'disbursed_at' => 'datetime'
     ];
 
-    public function user()
+    public function borrower(): BelongsTo
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsTo(Borrower::class);
     }
 
-    public function loanProduct()
+    public function loanProduct(): BelongsTo
     {
         return $this->belongsTo(LoanProduct::class);
     }
 
-    public function assignedOfficer()
+    public function assignedOfficer(): BelongsTo
     {
         return $this->belongsTo(User::class, 'assigned_officer_id');
     }
 
-    public function documents()
+    public function documents(): HasMany
     {
         return $this->hasMany(Document::class);
     }
 
-    public function creditCheck()
+    public function creditCheck(): HasOne
     {
         return $this->hasOne(CreditCheck::class);
     }
 
-    public function loanAccount()
+    public function loanAccount(): HasOne
     {
         return $this->hasOne(LoanAccount::class);
     }
 
-    public function auditLogs()
+    public function auditLogs(): HasMany
     {
         return $this->hasMany(AuditLog::class);
     }
 
-    // Scopes
-    public function scopePending($query)
+    public function scopePending(Builder $query): Builder
     {
         return $query->where('status', 'submitted');
     }
 
-    public function scopeUnderReview($query)
+    public function scopeUnderReview(Builder $query): Builder
     {
         return $query->where('status', 'under_review');
     }
 
-    public function scopeApproved($query)
+    public function scopeApproved(Builder $query): Builder
     {
         return $query->where('status', 'approved');
     }
@@ -117,7 +120,7 @@ class LoanApplication extends Model
         return $this->calculateMonthlyInstallment() * $this->tenure;
     }
 
-    public function generateApplicationRef()
+    public function generateApplicationRef(): string
     {
         return 'APP' . date('Ymd') . str_pad($this->id, 6, '0', STR_PAD_LEFT);
     }

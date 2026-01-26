@@ -17,15 +17,15 @@ class LoanProductsSeeder extends Seeder
             [
                 'name' => 'Personal Loan',
                 'description' => 'Unsecured personal loan for various purposes',
-                'min_amount' => 10000,
-                'max_amount' => 500000,
+                'min_amount' => 1000,
+                'max_amount' => 50000,
                 'interest_rate' => 12.5,
                 'interest_type' => 'fixed',
                 'min_tenure' => 12,
                 'max_tenure' => 60,
                 'type' => 'personal',
                 'eligibility_criteria' => [
-                    'min_income' => 25000,
+                    'min_income' => 2500,
                     'min_age' => 21,
                     'max_age' => 60,
                     'employment_status' => ['salaried', 'self_employed']
@@ -42,7 +42,7 @@ class LoanProductsSeeder extends Seeder
             [
                 'name' => 'Home Mortgage',
                 'description' => 'Loan for purchasing residential property',
-                'min_amount' => 500000,
+                'min_amount' => 50000,
                 'max_amount' => 5000000,
                 'interest_rate' => 8.5,
                 'interest_type' => 'fixed',

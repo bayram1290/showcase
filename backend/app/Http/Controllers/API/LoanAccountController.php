@@ -13,13 +13,6 @@ use Illuminate\Support\Facades\Validator;
 
 class LoanAccountController extends Controller
 {
-
-    protected $sunctum = ['auth:sanctum'];
-    public function __construct()
-    {
-        $this->middleware($this->sunctum);
-    }
-
     public function performCreditCheck(Request $request, int $application_id): JsonResponse {
 
         $validator = Validator::make($request->all(), [

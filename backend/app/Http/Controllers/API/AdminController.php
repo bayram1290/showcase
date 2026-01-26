@@ -12,14 +12,6 @@ use Illuminate\Support\Facades\Validator;
 
 class AdminController extends Controller
 {
-    protected $sanctum = 'auth:sunctum';
-    protected $role_admin = 'role:admin';
-
-    public function __construct()
-    {
-        $this->middleware([$this->sanctum, $this->role_admin]);
-    }
-
     public function getUsers(Request $request): JsonResponse
     {
         $query = User::query();

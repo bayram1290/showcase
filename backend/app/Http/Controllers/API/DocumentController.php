@@ -14,12 +14,9 @@ use Illuminate\Support\Facades\Validator;
 
 class DocumentController extends Controller
 {
-    protected $sunctum = ['auth:sanctum'];
 
     public function __construct()
-    {
-        $this->middleware($this->sunctum);
-    }
+    {}
 
     public function upload(Request $request, $application_id): JsonResponse
     {

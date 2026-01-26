@@ -101,6 +101,6 @@ class LoanAccount extends Model
 
     public function scopeActive($query): Builder
     {
-        return $query->where('status', 'active');
+        return $query->where('loan_accounts.status', 'active');
     }
 }

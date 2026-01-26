@@ -5,9 +5,11 @@ services:
       dockerfile: Dockerfile
     container_name: demo_a_php
     restart: unless-stopped
+    user: "${UID:-1000}:${GID:-1000}"
     ports:
       - "9000:9000"
     volumes:
+      - ./:/var/www/html
       - ./backend:/var/www/demo_a/backend
       - ./logs/php:/var/log/php
     networks:
@@ -54,6 +56,7 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    command: --ssl=0
     volumes:
       - mysql_data:/var/lib/mysql
       - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf

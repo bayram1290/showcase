@@ -1,0 +1,5 @@
+<?php
+// Override platform check
+if (file_exists(__DIR__ . '/vendor/composer/platform_check.php')) {
+    require_once __DIR__ . '/vendor/override_platform_check.php';
+}
