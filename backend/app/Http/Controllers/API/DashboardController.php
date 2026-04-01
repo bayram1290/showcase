@@ -10,6 +10,8 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Log;
+use Symfony\Component\HttpFoundation\Response;
 
 class DashboardController extends Controller
 {
@@ -56,7 +58,7 @@ class DashboardController extends Controller
             'success' => true,
             'stats' => $stats,
             'recent_applications' => $recent_applications
-        ]);
+        ], Response::HTTP_OK);
     }
     /**
      * Return dashboard statistics for loan officer/admin.
@@ -242,41 +244,65 @@ class DashboardController extends Controller
             'recent_applications' => $recent_applications,
             'upcoming_payments' => $upcoming_installments,
             'recent_disburments' => $recent_disburments
-        ]);
+        ], Response::HTTP_OK);
 
     }
 
-    /**
-     * Get the monthly trend for the past year.
-     *
-     * @param Request $request
-     * @return JsonResponse
-     */
     public function monthlyTrend(Request $request): JsonResponse
     {
+
         $user = $request->user();
 
         if (!$user->isLoanOfficer() && !$user->isAdmin()) {
             return response()->json([
                 'success' => false,
-                'message' => 'Unauthorized'
-            ], 403);
+                'message' => 'Unauthorized access.'
+            ], Response::HTTP_FORBIDDEN);
         }
 
-        $trend = DB::table('loan_applications')
-            ->select(
-                DB::raw('DATE_FORMAT(created_at, "%Y-%m") as month'),
-                DB::raw('COUNT(*) as applications'),
-                DB::raw('SUM(amount) as total_amount')
-            )
-            ->where('created_at', '>=', now()->subMonth(12))
-            ->groupBy('month')
-            ->orderBy('month','asc')
-            ->get();
+        $loan_officer = $user->isLoanOfficer();
+        $officer_id = $loan_officer ? $user->id : null;
+
+        $query = DB::table('loan_applications');
+
+        if ($loan_officer) {
+            $query->where('assigned_officer_id', $officer_id);
+        }
+
+        $trends = $query->select(
+            DB::raw('DATE_FORMAT(created_at, "%Y-%m") AS month'),
+            DB::raw('COUNT(*) AS application_count'),
+            DB::raw('SUM(amount) AS total_amount')
+        )->where('created_at', '>=', Carbon::now()->subYear())
+        ->groupBy('month')
+        ->orderBy('month', 'ASC')
+        ->get();
+
+        $disbursement_query = DB::table('loan_accounts AS l_acc')
+                            ->join('loan_applications AS l_app', 'l_acc.loan_application_id', '=', 'l_app.id');
+
+
+        if ($loan_officer) {
+            $disbursement_query->where('l_app.assigned_officer_id', $officer_id);
+        }
+
+        $disbursement_trend = $disbursement_query->select(
+            DB::raw('DATE_FORMAT(l_acc.created_at, "%Y-%m") AS month'),
+            DB::raw('COUNT(l_acc.id) AS disbursement_count'),
+            DB::raw('SUM(l_acc.disbursed_amount) AS total_disbursed')
+        )->where('l_acc.created_at', '>=', Carbon::now()->subYear())
+        ->groupBy('month')
+        ->orderBy('month', 'ASC')
+        ->get();
 
         return response()->json([
             'success' => true,
-            'data' => $trend
+            'user_role' => $loan_officer ? 'loan_officer' : 'admin',
+            'data' => [
+                'application_trend' => $trends,
+                'disbursement_trend' => $disbursement_trend
+            ]
         ]);
+
     }
 }

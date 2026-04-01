@@ -11,9 +11,11 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Notifications\VerifyEmail;
 use Laravel\Sanctum\HasApiTokens;
 
-class Borrower extends Authenticatable
+class Borrower extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
@@ -44,7 +46,6 @@ class Borrower extends Authenticatable
         'government_id_type',
         'total_debt',
         'monthly_expenses',
-        'is_verified',
         'is_active',
         'is_blocked',
         'preferred_contact_method',
@@ -64,26 +65,11 @@ class Borrower extends Authenticatable
         'monthly_income' => 'decimal:2',
         'total_debt' => 'decimal:2',
         'monthly_expenses' => 'decimal:2',
-        'is_verified' => 'boolean',
         'is_active' => 'boolean',
         'is_blocked' => 'boolean',
-        'verified_at' => 'datetime',
         'last_login' => 'datetime',
         'dependents' => 'integer'
     ];
-
-    protected static function boot(): void
-    {
-        parent::boot();
-
-        self::updated(function ($model) {
-            if ($model->wasChanged('is_verified')) {
-                $model->verified_at = Carbon::now();
-
-                $model->saveQuietly();
-            }
-        });
-    }
 
     public function loanApplications(): HasMany
     {
@@ -127,7 +113,7 @@ class Borrower extends Authenticatable
 
     public function isEligibleForLoan(int $min_income = 2500, float $max_debt_to_income_ratio = 50): bool
     {
-        if (!$this->is_verified ||$this->is_blocked)
+        if (!$this->email_verified_at ||$this->is_blocked)
         {
             return false;
         }
@@ -159,27 +145,6 @@ class Borrower extends Authenticatable
         if ($this->failed_login_attempts >= 5) {
             $this->update(['is_blocked' => true]);
         }
-    }
-
-    public function verify(): void
-    {
-        $this->update([
-            'is_verified' => true,
-            'verified_at' => Carbon::now()
-        ]);
-    }
-
-    public function unverify(): void
-    {
-        $this->update([
-            'is_verified' => false,
-            'verified_at' => null
-        ]);
-    }
-
-    public function scopeVerified(Builder $query): Builder
-    {
-        return $query->where('is_verified', true);
     }
 
     public function scopeActive(Builder $query): Builder
@@ -226,6 +191,11 @@ class Borrower extends Authenticatable
                 };
             }
         );
+    }
+
+    public function sendEmailVerificationNotification(): void
+    {
+        $this->notify(new VerifyEmail);
     }
 
 }

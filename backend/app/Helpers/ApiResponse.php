@@ -7,49 +7,106 @@ use Symfony\Component\HttpFoundation\Response;
 
 class ApiResponse
 {
-    public static function success($data = null, $message = 'Success', int $status = Response::HTTP_OK): JsonResponse
+    /**
+     * Success response.
+     *
+     * @param mixed $data
+     * @param string $message
+     * @param int $status
+     * @return JsonResponse
+     */
+    public static function success($data = null, string $message =  'Success', int $status = Response::HTTP_OK): JsonResponse
     {
         return response()->json([
             'success' => true,
-            'data' => $data,
             'message' => $message,
+            'data' => $data,
         ], $status);
     }
 
-    public static function error($message = 'Error', $error_code = null, int $code = Response::HTTP_BAD_REQUEST): JsonResponse
+    /**
+     * Error response.
+     *
+     * @param string $message
+     * @param string|null $errorCode
+     * @param int $status
+     * @return JsonResponse
+     */
+    public static function error(string $message = 'Error', ?string $errorCode = null, int $status = Response::HTTP_BAD_REQUEST): JsonResponse
     {
-        return response()->json([
+        $response = [
             'success' => false,
             'message' => $message,
-            'error_code' => $error_code,
-        ], $code);
+        ];
+
+        if (!$errorCode !== null) {
+            $response['error_code'] = $errorCode;
+        }
+
+        return response()->json([$response], $status);
     }
 
-    public static function unauthorized(string $message = 'Unauthorized', ?string $error_code = null, int $status = Response::HTTP_UNAUTHORIZED): JsonResponse
+    /**
+     * Unauthorized (401) response.
+     *
+     * @param string $message
+     * @param string|null $errorCode
+     * @param int $status
+     * @return JsonResponse
+     */
+    public function unauthorized(string $message = 'Unauthorized', ?string $errorCode = null, int $status = Response::HTTP_UNAUTHORIZED): JsonResponse
     {
-        return self::error(
-            $message,
-            $error_code,
-            $status
-        );
+        return $this->error($message, $errorCode, $status);
     }
 
-    public static function notFound(string $message = 'Resource not found', ?string $error_code = null, int $status = Response::HTTP_NOT_FOUND): JsonResponse
+    /**
+     * Validation error (422) response.
+     *
+     * @param string $message
+     * @param array|null $errors
+     * @param string|null $errorCode
+     * @param int $status
+     * @return JsonResponse
+     */
+    public static function validation(string $message = 'Validation failed', ?array $errors = null, ?string $errorCode = null, int $status = Response::HTTP_UNPROCESSABLE_ENTITY): JsonResponse
     {
-        return self::error(
-            $message,
-            $error_code,
-            $status
-        );
-    }
-
-    public static function validation(string $message = 'Validation failed', ?array $errors = null, ?string $error_code = null, int $status = Response::HTTP_UNPROCESSABLE_ENTITY): JsonResponse
-    {
-        return response()->json([
-            'success'=> true,
+        $response = [
+            'success' => false,
             'message' => $message,
-            'errors' => $errors,
-            'error_code' => $error_code,
-        ], $status);
+        ];
+
+        if ($errorCode !== null) {
+            $response['error_code'] = $errorCode;
+        }
+
+        if ($errors !== null) {
+            $response['errors'] = $errors;
+        }
+
+        return response()->json([$response], $status);
+    }
+
+    /**
+     * Forbidden (403) response.
+     *
+     * @param string $message
+     * @param string|null $errorCode
+     * @return JsonResponse
+     */
+    public function forbidden(string $message = 'Forbidden', ?string  $errorCode = null): JsonResponse
+    {
+        return self::error($message, $errorCode, Response::HTTP_FORBIDDEN);
+    }
+
+    /**
+     * Conflict (409) response.
+     *
+     * @param string $message
+     * @param string|null $errorCode
+     * @return JsonResponse
+     */
+    public static function conflict(string $message = 'Conflict', ?string $errorCode = null): JsonResponse
+    {
+        return self::error($message, $errorCode, Response::HTTP_CONFLICT);
     }
 }

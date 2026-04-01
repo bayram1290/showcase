@@ -14,5 +14,6 @@ return [
         'contact_methods' => ["email", "phone", "sms"],
         'marital_statuses' => ["single", "married", "divorced", "widowed"]
     ],
-    'default_query_get_limit' => 10
+    'default_query_get_limit' => 10,
+    'notify_admin_on_new_loan_submission' => false
 ];

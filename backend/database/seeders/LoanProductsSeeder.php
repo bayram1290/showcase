@@ -31,10 +31,7 @@ class LoanProductsSeeder extends Seeder
                     'employment_status' => ['salaried', 'self_employed']
                 ],
                 'required_documents' => [
-                    'identity_proof',
-                    'address_proof',
-                    'income_proof',
-                    'bank_statements'
+                    'identity',
                 ],
                 'processing_fee_percentage' => 2,
                 'late_fee' => 500
@@ -56,9 +53,9 @@ class LoanProductsSeeder extends Seeder
                     'employment_status' => ['salaried', 'self_employed']
                 ],
                 'required_documents' => [
-                    'identity_proof',
-                    'address_proof',
-                    'income_proof',
+                    'identity',
+                    'address',
+                    'income',
                     'property_documents',
                     'bank_statements'
                 ],
@@ -82,9 +79,9 @@ class LoanProductsSeeder extends Seeder
                     'employment_status' => ['salaried', 'self_employed']
                 ],
                 'required_documents' => [
-                    'identity_proof',
-                    'address_proof',
-                    'income_proof',
+                    'identity',
+                    'address',
+                    'income',
                     'vehicle_details',
                     'bank_statements'
                 ],

@@ -7,10 +7,9 @@
 7. Repayment Tracking → EMI schedules, payment processing
 8. Collections → Late payment handling, reminders
 
-
 // Database/migrations/
-1. users (with role: applicant, officer, manager, admin)
-2. loans (status: pending, under_review, approved, rejected, disbursed, closed)
+1. users (with role: officer, loan officer, moderator, admin)
+2. loans (status: draft, submitted, under_review, approved, rejected, cancelled, disbursed, closed)
 3. loan_applications
 4. documents
 5. credit_scores
@@ -23,54 +22,58 @@
 
 =====================================================
 
+// API Routes
 
 1. Authentication & User Management
-// API Routes
-POST   /api/auth/register      // Applicant registration
-POST   /api/auth/login         // All users login
-POST   /api/auth/logout        // Sanctum-based logout
-GET    /api/user/profile       // Get user profile
-PUT    /api/user/profile       // Update profile
+POST   /api/borrower/register      // Applicant registration
+POST   /api/borrower/login         // Applicant login
+POST   /api/borrower/logout        // Applicant logout
+GET    /api/borrower/profile       // View Applicant profile
+PUT    /api/borrower/profile       // Update Applicant profile
+
+GET    /api/user/login             // System user login
+POST   /api/user/logout            // System user logout
+GET    /api/user/profile           // Get System user profile
+PUT    /api/user/profile           // Update System user profile
 
 2. Loan Application Flow
-POST   /api/loans/apply        // Submit new loan application
-GET    /api/loans/my-applications // User's applications
-GET    /api/loans/{id}         // Get specific application
-PUT    /api/loans/{id}/cancel  // Cancel application
-POST   /api/loans/{id}/documents // Upload supporting docs
+GET    /api/borrower/applications                  // Get all loan applications for Applicant
+POST   /api/borrower/applications                  // Create a new loan application
+GET    /api/borrower/applications/{uuid}           // Get specific application
+PUT    /api/borrower/applications/{uuid}/cancel    // Cancel application
+POST   /api/borrower/applications/{uuid}/documents // Upload supporting docs
+POST   /api/borrower/applications/{uuid}/submit    // Submit the created application
 
 3. Document Management
-POST   /api/documents/upload   // Secure document upload
-GET    /api/documents/{id}     // View document (with permission)
-DELETE /api/documents/{id}     // Remove document
-POST   /api/documents/verify   // Officer marks doc as verified
+POST   /api/borrower/applications/{uuid}/upload                // upload document
+GET    /api/borrower/applications/{application_id}/documents   // View document (with permission)
+DELETE /api/borrower/applications/{uuid}/delete                // Remove document
+POST   /api/documents/{document_id}/verify                     // Officer marks doc as verified
 
-4. Credit Assessment API
-POST   /api/credit-check       // Internal scoring algorithm
+4. Loan Assessment API
+POST   /api/credit-check           // Internal scoring algorithm
 GET    /api/credit-score/{user_id} // Get credit score
-POST   /api/external-credit    // Mock external bureau integration
+POST   /api/external-credit        // Mock external bureau integration
 
 5. Approval Workflow
-GET    /api/admin/pending-loans // List pending applications
-POST   /api/admin/assign/{loan_id}/{officer_id} // Assign to officer
-POST   /api/admin/review       // Submit review notes
-POST   /api/admin/approve      // Approve (with hierarchy check)
-POST   /api/admin/reject       // Reject with reason
-GET    /api/admin/approval-history // Audit trail
+GET    /api/applications                // List pending applications
+POST   /api/applications/{uuid}/assign  // Assign to officer
+POST   /api/admin/approve               // Under review/Approve/Reject the application (with hierarchy check)
+GET    /api/admin/approval-history      // Audit trail
 
 6. Disbursement & Payment
-POST   /api/disbursement/{loan_id} // Release funds
-GET    /api/repayment-schedule/{loan_id} // EMI schedule
-POST   /api/repayment/pay      // Record payment
-GET    /api/repayment/history/{loan_id} // Payment history
-POST   /api/repayment/reminder // Send payment reminder
+POST   /api/disbursement/{loan_id}          // Release funds
+GET    /api/repayment-schedule/{loan_id}    // EMI schedule
+POST   /api/repayment/pay                   // Record payment
+GET    /api/repayment/history/{loan_id}     // Payment history
+POST   /api/repayment/reminder              // Send payment reminder
 
 7. Reporting & Analytics
-GET    /api/reports/loans-overview // Dashboard stats
-GET    /api/reports/npa           // Non-performing assets
-GET    /api/reports/approved-loans // Approved loans report
-GET    /api/reports/export-excel  // Export to Excel
-GET    /api/reports/generate-pdf  // Generate PDF statement
+GET    /api/reports/loans-overview      // Dashboard stats
+GET    /api/reports/npa                 // Non-performing assets
+GET    /api/reports/approved-loans      // Approved loans report
+GET    /api/reports/export-excel        // Export to Excel
+GET    /api/reports/generate-pdf        // Generate PDF statement
 
 ============================================================
 
@@ -82,15 +85,57 @@ Scheme of the project:
 │   │   │   └── API/
 │   │   │       ├── AuthController.php
 │   │   │       ├── LoanApplicationController.php
+│   │   │       ├── BorrowerController.php
+│   │   │       ├── UserController.php
 │   │   │       ├── DocumentController.php
 │   │   │       ├── CreditCheckController.php
 │   │   │       ├── LoanAccountController.php
 │   │   │       ├── DashboardController.php
 │   │   │       └── AdminController.php
+│   │   │       └── LoanProductController.php
 │   │   └── Middleware/
 │   │       └── CheckRole.php
+│   │       └── AuthenticateApi.php
+│   │       └── BorrowerMiddleware.php
+│   │       └── RoleMiddleware.php
+│   │       └── StaffMiddleware.php
+│   │       └── ValidateMobile.php
+│   ├── Exceptions/
+│   |    └── ApiResponse.php
+│   ├── Helpers/
+│   |    └── ApiResponse.php
+│   ├── Jobs/
+│   |    ├── GenerateMonthlyStatements.php
+│   |    ├── GenerateWeeklyReport.php
+│   |    └── SendInstallmentReminders.php
+│   ├── Mail/
+│   |    ├── GenericEmail.php
+│   |    ├── MonthlyStatementMail.php
+│   |    ├── NewApplicationSubmittedMail.php
+│   |    └── WeeklyReportMail.php
+│   ├── Notifications/
+│   |    ├── InstallmentDueReminder.php
+│   |    ├── LoanApplicationStatusUpdate.php
+│   |    └── StuckApplicationNotification.php
+│   ├── Exceptions/
+│   |    ├── User.php
+│   |    ├── Borrower.php
+│   |    ├── LoanProduct.php
+│   |    ├── LoanApplication.php
+│   |    ├── Document.php
+│   |    ├── CreditCheck.php
+│   |    ├── LoanAccount.php
+│   |    ├── Installment.php
+│   |    └── AuditLog.php
+│   ├── Providers/
+│   |    └── AppServiceProvider.php
+│   ├── Rules/
+│   |    └── ValidMobileNumber.php
+│   ├── Services/
+│   |    └── MobileValidationService.php
 │   └── Models/
 │       ├── User.php
+│       ├── Borrower.php
 │       ├── LoanProduct.php
 │       ├── LoanApplication.php
 │       ├── Document.php
@@ -98,6 +143,8 @@ Scheme of the project:
 │       ├── LoanAccount.php
 │       ├── Installment.php
 │       └── AuditLog.php
+├── config/
+│   └── helper.php
 ├── database/
 │   ├── migrations/
 │   └── seeders/

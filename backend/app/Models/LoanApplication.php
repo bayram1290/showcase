@@ -23,7 +23,6 @@ class LoanApplication extends Model
     }
 
     protected $fillable = [
-        'user_id',
         'loan_product_id',
         'application_ref',
         'amount',
@@ -38,7 +37,20 @@ class LoanApplication extends Model
         'rejection_reason',
         'submitted_at',
         'approved_at',
-        'disbursed_at'
+        'disbursed_at',
+        'processing_fee',
+        'insurance_fee',
+        'total_fees',
+        'review_notes',
+        'review_score',
+        'disbursement_method',
+        'bank_account_number',
+        'bank_branch',
+        'bank_iban',
+        'reviewed_at',
+        'closed_at',
+        'borrower_id',
+        'loan_type'
     ];
 
     protected $casts = [
@@ -49,7 +61,9 @@ class LoanApplication extends Model
         'total_payable' => 'decimal:2',
         'submitted_at' => 'datetime',
         'approved_at' => 'datetime',
-        'disbursed_at' => 'datetime'
+        'disbursed_at' => 'datetime',
+        'reviewed_at' => 'datetime',
+        'closed_at' => 'datetime'
     ];
 
     public function borrower(): BelongsTo
@@ -120,8 +134,12 @@ class LoanApplication extends Model
         return $this->calculateMonthlyInstallment() * $this->tenure;
     }
 
-    public function generateApplicationRef(): string
+    public function generateApplicationRef(bool $force = false): string
     {
-        return 'APP' . date('Ymd') . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+        $ref = 'APP' . date($force ? 'YmdHis': 'Ymd') . str_pad($this->id, 6, '0', STR_PAD_LEFT);
+        if (LoanApplication::where('application_ref', $ref)->exists()) {
+            return $this->generateApplicationRef(true);
+        }
+        return $ref;
     }
 }

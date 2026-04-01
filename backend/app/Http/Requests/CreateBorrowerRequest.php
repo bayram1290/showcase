@@ -24,12 +24,14 @@ class CreateBorrowerRequest extends FormRequest
      */
     public function rules(): array
     {
+
+        \Illuminate\Support\Facades\Log::info($this->login);
         return [
             'login' => ['required', 'string', 'min:5', 'max:50', 'unique:borrowers,login', 'regex:/'. config('helper.auth.login_format') .'/'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/'. config('helper.auth.password_format') .'/'],
             'first_name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],
-            'email' => ['required', 'string', 'email', 'max:100', 'unique:borrowers,email'],
+            'email' => ['nullable', 'string', 'email', 'max:100', 'unique:borrowers,email'],
             'phone' => ['required', 'string', new ValidMobileNumber(), 'unique:borrowers,phone'],
             'date_of_birth' => ['required', 'date', 'before:-18 years'],
             'gender' => ['required', Rule::in(['M', 'F'])],
@@ -43,8 +45,8 @@ class CreateBorrowerRequest extends FormRequest
             'employer_name' => ['required_if:employment_status,employed', 'string', 'max:100'],
             'employment_duration' => ['required_if:employment_status,employed, self-employed', 'nullable', 'integer', 'min:0'],
             'occupation' => 'nullable|string|max:100',
-            'ssn' => ['required', 'string', 'unique:borrowers,ssn', 'regex:/'. config('helper.auth.ssn_format') .'/'],
-            'government_id_number' => ['nullable', 'string', 'unique:borrowers,government_id'],
+            'ssn' => ['required', 'string', 'unique:borrowers,ssn', 'regex:/'. config(key: 'helper.auth.ssn_format') .'/'],
+            'government_id_number' => ['nullable', 'string', 'unique:borrowers,government_id_number'],
             'government_id_type' => ['required_with:government_id', 'nullable', Rule::in(config('helper.auth.government_id_types'))],
             'monthly_expenses' => ['required', 'numeric', 'min:0', 'regex:/'  .config('helper.auth.monthly_expenses_format') . '/'],
             'preferred_contact_method' => ['nullable', Rule::in(config('helper.auth.contact_methods'))],

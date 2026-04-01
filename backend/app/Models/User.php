@@ -30,7 +30,8 @@ class User extends Authenticatable
         'is_active',
         'is_locked',
         'last_login',
-        'device_name'
+        'device_name',
+        'failed_login_attempts'
     ];
 
     protected $hidden = [
@@ -45,11 +46,6 @@ class User extends Authenticatable
         'date_of_joining' => 'date',
         'password_changed' => 'datetime',
     ];
-
-    // public function loanApplication()
-    // {
-    //     return $this->hasMany(LoanApplication::class);
-    // }
 
     public function assignedApplications(): HasMany
     {
@@ -96,6 +92,11 @@ class User extends Authenticatable
         return in_array($this->role, ['admin', 'loan_officer']);
     }
 
+    public function canVerifyDocuments(): bool
+    {
+        return $this->role === 'loan_officer';
+    }
+
     public function canManageUsers(): bool
     {
         return $this->role === 'admin';
@@ -111,13 +112,24 @@ class User extends Authenticatable
 
     public function recordFailedLogin(): void
     {
-        $this->increment('faoiled_login_attempts');
+        $this->increment('failed_login_attempts');
 
         if ($this->failed_login_attempts >= 5) {
             $this->update([
                 'is_locked' => true
             ]);
         }
+    }
+
+    public function getAdminPublicField(string $field): mixed
+    {
+        $admin_public_fields = User::where('role', 'admin')->first()->only(['email', 'first_name', 'last_name', 'department']);
+
+        if (!isset($admin_public_fields[$field])) {
+            return null;
+        }
+
+        return $admin_public_fields[$field];
     }
 
 }

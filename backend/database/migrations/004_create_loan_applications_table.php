@@ -15,7 +15,7 @@ return new class extends Migration
 
             $table->id();
             $table->uuid('application_uuid')->unique()->index();
-            $table->string('application_ref')->unique();
+            $table->string('application_ref')->nullable()->unique();
             $table->decimal('amount', 12, 2);
             $table->integer('tenure')->comment('in months'); // in months
             $table->decimal('interest_rate', 5, 2);
@@ -23,13 +23,13 @@ return new class extends Migration
                 'draft',
                 'submitted',
                 'under_review',
-                'requires_more_info',
                 'approved',
                 'rejected',
                 'cancelled',
                 'disbursed',
                 'closed'
             ])->default('draft');
+            $table->enum('loan_type', ['personal', 'business', 'education', 'auto', 'mortgage'])->nullable();
             $table->text('purpose')->nullable();
             $table->json('application_data')->nullable()->comment('All application form data'); // Stores all form data
             $table->decimal('monthly_installment', 10, 2)->nullable();
@@ -41,7 +41,7 @@ return new class extends Migration
             $table->integer('review_score')->nullable()->comment('0-100 score based on eligibility');
             $table->string('disbursement_method')->nullable();
             $table->string('bank_account_number')->nullable();
-            $table->string('bank_name')->nullable();
+            $table->string('bank_branch');
             $table->string('bank_iban')->nullable()->comment('International Bank Account Number');
             $table->text('rejection_reason')->nullable();
             $table->timestamp('submitted_at')->nullable();
@@ -52,8 +52,8 @@ return new class extends Migration
             $table->timestamps();
             $table->softDeletes();
 
-            $table->foreignId('borrower_id')->constrained('borrowers')->onDelete('cascade');
-            $table->foreignId('loan_product_id')->constrained()->onDelete('cascade');
+            $table->foreignId('borrower_id')->constrained('borrowers')->onDelete('no action');
+            $table->foreignId('loan_product_id')->constrained()->onDelete('no action');
             $table->foreignId('assigned_officer_id')->nullable()->constrained('users');
 
             $table->index(['status', 'created_at']);

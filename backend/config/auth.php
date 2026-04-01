@@ -41,9 +41,9 @@ return [
             'provider' => 'users',
         ],
 
-        'staff' => [
+        'api' => [
             'driver' => 'sanctum',
-            'provider' => 'staff_users',
+            'provider' => 'users',
         ],
 
         'borrower' => [
