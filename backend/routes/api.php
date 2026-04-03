@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\UserController;
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\API\{
@@ -28,7 +29,16 @@ Route::prefix('user')->group(function (){
     });
 });
 
+// Admin routes
+Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(function() {
+    Route::get('/users', [UserController::class, 'index']);
+    Route::put('/users/{user}', [UserController::class, 'update']);
+    Route::delete('/users/{user}', [UserController::class, 'destroy']);
+    Route::post('/users/{user}/activate', [UserController::class, 'activate']);
+    Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate']);
+});
 
+// Borrower routes
 Route::prefix('borrower')->group(function () {
     Route::post('/register', [BorrowerAuthController::class, 'register']);
     Route::post('/login', [BorrowerAuthController::class, 'login']);

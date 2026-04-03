@@ -2,78 +2,47 @@
 
 namespace App\Exceptions;
 
-use Exception;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\Response;
 
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
-use Illuminate\Validation\ValidationException;
-use Symfony\Component\HttpKernel\Exception\HttpException;
-use Log;
-use Throwable;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\Request;
 
-class ApiExceptionHandler extends Exception
+use Illuminate\Validation\ValidationException;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Symfony\Component\HttpKernel\Exception\MethodNotAllowedHttpException;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
+use Throwable;
+use Log;
+
+class ApiExceptionHandler
 {
-    public static function handle (Throwable $e, Request $request): JsonResponse
+    public static function handle(Throwable $e, Request $request): JsonResponse
     {
+        // if (!$request->is('api/*')) {
+        //     throw $e;
+        // }
+
         $status_code = Response::HTTP_INTERNAL_SERVER_ERROR;
         $response = [
             'success' => false,
-            'message' => 'Something went wrong'
+            'message' => 'Something went wrong',
         ];
 
-        switch (true) {
-            case $e instanceof AuthenticationException:
-                $status_code = Response::HTTP_UNAUTHORIZED;
-                $response['message'] = 'Unauthenticated. Please provide valid credentials.';
-                break;
+        match (true) {
+            $e instanceof AuthenticationException => static::handleAuthentication($response, $status_code),
+            $e instanceof ModelNotFoundException => static::handleModelNotFound($e, $response, $status_code),
+            $e instanceof ValidationException => static::handleValidation($e, $response, $status_code),
+            $e instanceof NotFoundHttpException => static::handleNotFound($response, $status_code),
+            $e instanceof MethodNotAllowedHttpException => static::handleMethodNotAllowed($e,$response, $status_code),
+            $e instanceof ThrottleRequestsException => static::handleThrottle($e, $response, $status_code),
+            $e instanceof HttpException => static::handleHttpException($e, $response, $status_code),
+            default => static::handleDefault($e, $response, $status_code)
+        };
 
-            case $e instanceof ModelNotFoundException:
-                $status_code = Response::HTTP_NOT_FOUND;
-                $model = class_basename($e->getModel());
-                $ids = $e->getIds();
-                $idStr = is_array($ids) ? implode(', ', $ids) : $ids;
-                $response['message'] = "No {$model} found with ID: {$idStr}";
-                break;
-
-            case $e instanceof ValidationException:
-                $status_code = Response::HTTP_UNPROCESSABLE_ENTITY;
-                $response['message'] = 'Validation failed';
-                $response['errors'] = $e->errors();
-                break;
-
-            case $e instanceof NotFoundHttpException:
-                $status_code = Response::HTTP_NOT_FOUND;
-                $response['message'] = 'Endpoint not found';
-                break;
-
-            case $e instanceof MethodNotAllowedHttpException:
-                $status_code = Response::HTTP_METHOD_NOT_ALLOWED;
-                $response['message'] = 'Method not allowed for this endpoint';
-                $response['allowed_methods'] = $e->getHeaders()['Allow'] ?? [];
-                break;
-
-            case $e instanceof ThrottleRequestsException:
-                $status_code = Response::HTTP_TOO_MANY_REQUESTS;
-                $response['message'] = 'Too many requests';
-                $response['retry_after'] = $e->getHeaders()['Retry-After'] ?? 60;
-                break;
-
-            case $e instanceof HttpException:
-                $status_code = $e->getStatusCode();
-                $response['message'] = $e->getMessage() ?: Response::$statusTexts[$status_code] ?? 'HTTP Error';
-                break;
-
-            default:
-                $response['message'] = $e->getMessage();
-                break;
-        }
-
-        $debug_enabled = config('services.api.app_debug_mode') === true && config('services.api.app_env_mode') !== 'production';
-
-        if ($debug_enabled) {
+        if (config('app.debug')) {
             $response['debug'] = [
                 'exception' => get_class($e),
                 'message' => $e->getMessage(),
@@ -85,8 +54,7 @@ class ApiExceptionHandler extends Exception
 
         if (app()->environment('production') && $status_code >= 500) {
             unset($response['debug']);
-
-            $response['message'] = 'Unexpected error occurred. Please try again later.';
+            $response['message'] = 'Unexpected error occurred. Please, try again later.';
 
             Log::error('API exception handler', [
                 'exception' => get_class($e),
@@ -96,10 +64,66 @@ class ApiExceptionHandler extends Exception
                 'url' => $request->fullUrl(),
                 'method' => $request->method(),
                 'ip' => $request->ip(),
-                'user_id' => $request->user()?->id,
+                'user_agent' => $request->userAgent(),
+                'user_id' => $request->user() ? $request->user()->id : null
             ]);
         }
 
         return response()->json($response, $status_code);
     }
+
+    private static function handleAuthentication(array &$response, int &$statusCode): void
+    {
+        $statusCode = Response::HTTP_UNAUTHORIZED;
+        $response['message'] = 'Unauthenticated. Please, login with valid credentials.';
+    }
+
+    private static function handleModelNotFound(ModelNotFoundException $e, array &$response, int &$statusCode): void
+    {
+        $statusCode = Response::HTTP_NOT_FOUND;
+        $model = class_basename($e->getModel());
+        $ids = $e->getIds();
+        $id_str = is_array($ids) ? implode(', ', $ids) : $ids;
+        $response['message'] = "No {$model} found with ID: {$id_str}";
+    }
+
+    private static function handleValidation(ValidationException $e, array &$response, int &$statusCode): void
+    {
+        $statusCode = Response::HTTP_UNPROCESSABLE_ENTITY;
+        $response['message'] = 'Validation failed.';
+        $response['errors'] = $e->errors();
+    }
+
+    private static function handleNotFound(array &$response, int &$statusCode): void
+    {
+        $statusCode = Response::HTTP_NOT_FOUND;
+        $response['message'] = 'Endpoint not found.';
+    }
+
+    private static function handleMethodNotAllowed(MethodNotAllowedHttpException $e,array &$response, int &$statusCode): void
+    {
+        $statusCode = Response::HTTP_METHOD_NOT_ALLOWED;
+        $response['message'] = 'Method not allowed for this endpoint.';
+        $response['allowed_methods'] = $e->getHeaders()['Allow'] ?? [];
+    }
+
+    private static function handleThrottle(ThrottleRequestsException $e, array &$response, int &$statusCode): void
+    {
+        $statusCode = Response::HTTP_TOO_MANY_REQUESTS;
+        $response['message'] = 'Too many requests. Please, try again later.';
+        $response['retry_after'] = $e->getHeaders()['Retry-After'] ?? 60;
+    }
+
+    private static function handleHttpException(HttpException $e, array &$response, int &$statusCode): void
+    {
+        $statusCode = $e->getStatusCode();
+        $response['message'] = $e->getMessage() ? : Response::$statusTexts[$statusCode] ?? 'HTTP Error.';
+    }
+
+    private static function handleDefault(Throwable $e, array &$response, int &$statusCode): void
+    {
+        $statusCode = Response::HTTP_INTERNAL_SERVER_ERROR;
+        $response['message'] = 'Unexpected error occurred. Error:\n' . $e->getMessage();
+    }
+
 }

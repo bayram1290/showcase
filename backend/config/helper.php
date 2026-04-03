@@ -15,5 +15,6 @@ return [
         'marital_statuses' => ["single", "married", "divorced", "widowed"]
     ],
     'default_query_get_limit' => 10,
-    'notify_admin_on_new_loan_submission' => false
+    'notify_admin_on_new_loan_submission' => false,
+    'default_pagination_length' => 15
 ];

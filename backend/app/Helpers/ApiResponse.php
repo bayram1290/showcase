@@ -54,9 +54,9 @@ class ApiResponse
      * @param int $status
      * @return JsonResponse
      */
-    public function unauthorized(string $message = 'Unauthorized', ?string $errorCode = null, int $status = Response::HTTP_UNAUTHORIZED): JsonResponse
+    public static function unauthorized(string $message = 'Unauthorized', ?string $errorCode = null, int $status = Response::HTTP_UNAUTHORIZED): JsonResponse
     {
-        return $this->error($message, $errorCode, $status);
+        return self::error($message, $errorCode, $status);
     }
 
     /**
@@ -93,7 +93,7 @@ class ApiResponse
      * @param string|null $errorCode
      * @return JsonResponse
      */
-    public function forbidden(string $message = 'Forbidden', ?string  $errorCode = null): JsonResponse
+    public static function forbidden(string $message = 'Forbidden', ?string  $errorCode = null): JsonResponse
     {
         return self::error($message, $errorCode, Response::HTTP_FORBIDDEN);
     }

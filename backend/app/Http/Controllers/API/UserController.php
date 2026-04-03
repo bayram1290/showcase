@@ -1,223 +1,131 @@
 <?php
-
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
-use Carbon\Carbon;
-use Illuminate\Http\JsonResponse;
+
+use App\Http\Requests\UpdateUserRequest;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
-use Symfony\Component\HttpFoundation\Response;
-use App\Rules\ValidMobileNumber;
-use Log;
+use App\Helpers\ApiResponse;
+use App\Models\User;
+use App\Services\UserService;
+use Symfony\Component\HttpFoundation\JsonResponse;
+
 
 class UserController extends Controller
 {
+    protected UserService $userService;
+
+    public function __construct(UserService $userService)
+    {
+        $this->userService = $userService;
+    }
+
+    /**
+     * Fetch a list of users with filters and pagination.
+     *
+     * @param Request $request The HTTP request containing the filters and pagination.
+     *
+     * @return JsonResponse The JSON response containing the list of users.
+     */
     public function index(Request $request): JsonResponse
     {
-        $query = User::query();
+        $users = $this->userService->list($request);
 
-        if ($request->has("role")) {
-            $query->where("role", $request->role);
-        }
-
-        if ($request->has("department")) {
-            $query->where("department", 'like', "%{$request->department}%");
-        }
-
-        if ($request->has("is_active")) {
-            $query->where("is_active", $request->is_active);
-        }
-
-        if ($request->has("search")) {
-            $search = $request->search;
-
-            $query->where(function($q) use ($search) {
-                $q->where('login', 'like', "%{$search}%")
-                  ->OrWhere('first_name', 'like', "%{$search}%")
-                  ->OrWhere('last_name', 'like', "%{$search}%")
-                  ->OrWhere('employee_id', 'like', "%{$search}%")
-                  ->OrWhere('email', 'like', "%{$search}%");
-            });
-        }
-
-        $users = $query->orderByDesc('created_at')
-            ->paginate($request->get('per_page', 15));
-
-        return response()->json([
-            'success' => true,
-            'data' => $users,
-        ]);
+        return ApiResponse::success(
+            $users,
+            'Users fetched successfully.',
+            200
+        );
     }
 
-    public function update(Request $request, int $user_id): JsonResponse
+    /**
+     * Update a user.
+     *
+     * @param Request $request The HTTP request containing the user data.
+     * @param User $user The user to be updated.
+     *
+     * @return JsonResponse The JSON response containing the updated user data.
+     *
+     * @throws \Exception If the user data is invalid or if the user cannot be updated.
+     */
+    public function update(UpdateUserRequest $request, User $user): JsonResponse
     {
+        try {
+            $user_data = $request->validated();
+            $user_data = $this->userService->update($user, $user_data);
 
-        $validator = Validator::make($request->all(), [
-            'first_name' => 'sometimes|required|string|max:50',
-            'last_name' => 'sometimes|required|string|max:50',
-            'phone' => ['sometimes', 'nullable', 'string', new ValidMobileNumber()],
-            'role' => 'sometimes|required|in:loan_officer,moderator',
-            'email' => 'sometimes|required|email|unique:users,email,' . $user_id,
-            'department' => 'sometimes|nullable|string',
-            'employee_id' => 'sometimes|nullable|string|unique:users,employee_id,' . $user_id,
-            'date_of_joining' => 'sometimes|nullable|date',
-            'password' => 'sometimes|nullable|string|min:8|confirmed',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success'=> false,
-                'errors'=> $validator->errors(),
-            ],  Response::HTTP_UNPROCESSABLE_ENTITY);
+            return ApiResponse::success($user_data, 'User updated successfully.', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'UPDATE_USER_ERROR',
+                500
+            );
         }
-
-        $user = User::findOrFail($user_id);
-
-        $update_data = $request->only([
-            'first_name',
-            'last_name',
-            'phone',
-            'role',
-            'email',
-            'department',
-            'employee_id',
-            'date_of_joining',
-        ]);
-
-        if ($request->has('password')) {
-            $update_data['password'] = bcrypt($request->input('password'));
-            $update_data['password_changed_at'] = Carbon::now();
-        }
-
-        $user->update($update_data);
-
-        return response()->json([
-            'success'=> true,
-            'message' => 'User updated successfully',
-            'data' => $user
-        ], Response::HTTP_OK);
     }
 
-    public function delete(Request $request, $id): JsonResponse
+    /**
+     * Soft delete a user.
+     *
+     * @param Request $request The HTTP request containing the user data.
+     * @param User $user The user to be deleted.
+     *
+     * @return JsonResponse The JSON response containing the result of the deletion.
+     *
+     * @throws \Exception If the user data is invalid or if the user cannot be deleted.
+     */
+    public function destroy(Request $request, User $user): JsonResponse
     {
-        $user = User::findOrFail($id);
+        try {
+            $this->userService->delete($user, $request->user());
 
-        if (auth()->user()->role != 'admin') {
-            return response()->json([
-                'success'=> false,
-                'errors' => 'You do NOT have permission to perform this action'
-            ], Response::HTTP_FORBIDDEN);
+            return ApiResponse::success(null, 'User deleted successfully.', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'DELETE_USER_ERROR',
+                500
+            );
         }
-
-        if ($user->id === auth()->id()) {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'You CAN NOT delete your own account'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        if (!$user->trashed()) {
-            return response()->json([
-                'success'=> false,
-                'errors'=> 'User already deleted'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        $user->delete();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'User deleted successfully'
-        ]);
     }
 
-
-    public function activate(int $user_id): JsonResponse
+    /**
+     * Activate a user.
+     *
+     * @param Request $request The HTTP request containing the user data.
+     * @param User $user The user to be activated.
+     *
+     * @return JsonResponse The JSON response containing the result of the activation.
+     *
+     * @throws \Exception If the user data is invalid or if the user cannot be activated.
+     */
+    public function activate(Request $request, User $user): JsonResponse
     {
-        $user = User::withTrashed()->findOrFail($user_id);
+        try {
+            $this->userService->activate($user, $request->user());
 
-        if (auth()->user()->role != 'admin') {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'You do NOT have permission to perform this action'
-            ], Response::HTTP_FORBIDDEN);
+            return ApiResponse::success(null, 'User activated successfully.', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'ACTIVATE_USER_ERROR',
+                500
+            );
         }
-
-        if ($user->id === auth()->id()) {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'You CAN NOT activate your own account'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        if ($user->is_active && !$user->trashed()) {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'User already activated'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        $user->update([
-            'is_active' => true,
-            'is_locked' => false,
-            'failed_login_attempts' => 0,
-        ]);
-
-        if ($user->trashed()) {
-            $user->restore();
-        }
-
-        return response()->json([
-            'success'=> true,
-            'message' => 'User activated successfully',
-            'data'=> $user
-        ], Response::HTTP_OK);
     }
 
-    public function deactivate(int $user_id): JsonResponse
+    public function deactivate(Request $request, User $user): JsonResponse
     {
-        $user = User::findOrFail($user_id);
+        try {
+            $this->userService->deactivate($user, $request->user());
 
-        if ($user->is_active === false || $user->trashed()) {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'User already deactivated/deleted'
-            ], Response::HTTP_FORBIDDEN);
+            return ApiResponse::success(null, 'User deactivated successfully.', 200);
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'DEACTIVATE_USER_ERROR',
+                500
+            );
         }
-
-        if ($user->id === auth()->id() && $user->trashed()) {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'You CAN NOT deactivate your own account'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        if ($user->role === 'admin') {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'You CAN NOT deactivate admin account'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        if (auth()->user()->role != 'admin') {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'You do NOT have permission to perform this action'
-            ], Response::HTTP_FORBIDDEN);
-        }
-
-        $user->update([
-            'is_active' => false,
-            'is_locked' => false,
-        ]);
-
-        $user->tokens()->delete();
-
-        return response()->json([
-            'success'=> true,
-            'message'=> 'User deactivated successfully',
-        ], Response::HTTP_OK);
     }
 }

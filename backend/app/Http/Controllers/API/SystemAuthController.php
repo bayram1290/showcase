@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\SystemLoginRequest;
 use App\Services\PermissionService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Symfony\Component\HttpFoundation\JsonResponse;
-// use Spatie\Permission\Models\Permission;
-// use \Symfony\Component\HttpFoundation\Response;
 
 class SystemAuthController extends Controller
 {

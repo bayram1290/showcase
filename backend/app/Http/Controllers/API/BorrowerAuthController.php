@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
 use App\Http\Requests\BorrowerLoginRequest;
 use App\Http\Requests\CreateBorrowerRequest;

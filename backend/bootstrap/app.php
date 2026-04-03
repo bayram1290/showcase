@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
 
 use App\Jobs\GenerateMonthlyStatements;
 use App\Jobs\GenerateWeeklyReport;
@@ -28,41 +28,18 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'staff' => \App\Http\Middleware\StaffMiddleware::class,
-            'borrower' => \App\Http\Middleware\BorrowerMiddleware::class,
+            'auth' => \App\Http\Middleware\AuthenticateApi::class,
             'role' => \App\Http\Middleware\RoleMiddleware::class,
-            'auth.api' => \App\Http\Middleware\AuthenticateApi::class,
+            'borrower' => \App\Http\Middleware\BorrowerMiddleware::class,
         ]);
-
-        /*
-        // Registeration mobile validation middleware
-        $middleware->alias([
-            'validate.mobile' => \App\Http\Middleware\ValidateMobile::class,
-        ]);
-
-        // Or register mobile validation middleware to specific groups (like, to apply to all API routes)
-        $middleware->appendToGroup('api', [
-            \App\Http\Middleware\ValidateMobile::class,
-        ]);
-        */
     })
     ->withExceptions(function (Exceptions $exceptions): void {
 
-        $exceptions->renderable(function (Throwable $e, Illuminate\Http\Request $request): JsonResponse {
-            return \App\Exceptions\ApiExceptionHandler::handle($e,  $request);
-        });
-
-        $exceptions->report(function (ModelNotFoundException $e) {
-            \Log::warning('Model not found', [
-                'model' => $e->getModel(),
-                'ids' => $e->getIds(),
-            ]);
-        });
-
-        $exceptions->report(function (Illuminate\Validation\ValidationException $e) {
-            \Log::info('Validation failed', [
-                'errors' => $e->errors(),
-            ]);
+        $exceptions->renderable(function (Throwable $e, Request $request) {
+            if ($request->is('api/*')) {
+                return \App\Exceptions\ApiExceptionHandler::handle($e, $request);
+            }
+            return null;
         });
     })
     ->withSchedule(function (Schedule $schedule) {
