@@ -25,7 +25,6 @@ class CreateBorrowerRequest extends FormRequest
     public function rules(): array
     {
 
-        \Illuminate\Support\Facades\Log::info($this->login);
         return [
             'login' => ['required', 'string', 'min:5', 'max:50', 'unique:borrowers,login', 'regex:/'. config('helper.auth.login_format') .'/'],
             'password' => ['required', 'string', 'min:8', 'confirmed', 'regex:/'. config('helper.auth.password_format') .'/'],

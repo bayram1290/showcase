@@ -123,7 +123,7 @@ class ApiExceptionHandler
     private static function handleDefault(Throwable $e, array &$response, int &$statusCode): void
     {
         $statusCode = Response::HTTP_INTERNAL_SERVER_ERROR;
-        $response['message'] = 'Unexpected error occurred. Error:\n' . $e->getMessage();
+        $response['message'] = 'Unexpected error occurred. Error: ' . PHP_EOL . $e->getMessage();
     }
 
 }

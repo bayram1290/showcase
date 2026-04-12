@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('first_name');
             $table->string('last_name');
             $table->string('email')->nullable()->unique();
+            $table->timestamp('email_verified_at')->nullable();
             $table->string('phone')->unique();
             $table->string('address');
             $table->date('date_of_birth');
@@ -36,10 +37,8 @@ return new class extends Migration
             $table->enum('government_id_type', ['passport', 'nic', 'drivers_license', 'eid'])->comment('nic_National_Identity_Card_and_eid_Electronic_ID');
             $table->decimal('total_debt', 12, 2)->default(0);
             $table->decimal('monthly_expenses', 12, 2)->default(0);
-            $table->boolean('is_verified')->default(false);
             $table->boolean('is_active')->default(true);
             $table->boolean('is_blocked')->default(false);
-            $table->timestamp('verified_at')->nullable();
             $table->integer('failed_login_attempts')->default(0);
             $table->timestamp('last_login')->nullable();
             $table->string('preferred_contact_method')->default('email');
@@ -52,7 +51,6 @@ return new class extends Migration
             $table->index(['city', 'region']);
             $table->index('employment_status');
             $table->index('monthly_income');
-            $table->index('is_verified');
 
         });
     }

@@ -25,7 +25,6 @@ class Document extends Model
     ];
 
     protected $casts = [
-        'file_size' => 'decimal:2',
         'is_verified' => 'boolean',
         'verified_at' => 'datetime'
     ];

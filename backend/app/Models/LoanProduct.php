@@ -5,9 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class LoanProduct extends Model
 {
+
+    use SoftDeletes;
     protected $fillable = [
         'name',
         'description',
@@ -22,7 +25,8 @@ class LoanProduct extends Model
         'required_documents',
         'processing_fee_percentage',
         'late_fee',
-        'is_active'
+        'is_active',
+        'deleted_at'
     ];
 
     protected $casts = [
@@ -35,6 +39,8 @@ class LoanProduct extends Model
         'required_documents' => 'array',
         'is_active' => 'boolean'
     ];
+
+    protected $dates = ['deleted_at'];
 
     public function loanApplications(): HasMany
     {

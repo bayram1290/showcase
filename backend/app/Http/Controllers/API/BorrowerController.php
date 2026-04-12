@@ -8,18 +8,41 @@ use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Log;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\AuditLog;
 
 class BorrowerController extends Controller
 {
+    /**
+     * List of borrowers filtered by the request parameters, paginated by default.
+     * Parameters:
+     *   - email_verified_at: Filter by whether the borrower has verified their email address
+     *   - is_active: Filter by whether the borrower is active or not
+     *   - is_blocked: Filter by whether the borrower is blocked or not
+     *   - employment_status: Filter by the borrower's employment status
+     *   - region: Filter by the borrower's region
+     *   - city: Filter by the borrower's city
+     *   - min_income: Filter by the borrower's minimum income
+     *   - max_income: Filter by the borrower's maximum income
+     *   - search: Search for a borrower based on:
+     *      * login
+     *      * first name or,
+     *      * last name or,
+     *      * phone or,
+     *      * SSN or,
+     *      * email
+     *   sort_by: The field to sort the results by
+     *   sort_order: The order of the sorting (asc or desc)
+     *   per_page: The number of results to return per page
+     *
+     * @return JsonResponse
+     */
     public function index(Request $request): JsonResponse
     {
         $query = Borrower::query();
 
-        if ($request->has("is_verified")) {
-            $query = $query->where("is_verified", $request->is_verified);
+        if ($request->has("email_verified_at")) {
+            $query = $query->where("email_verified_at", $request->email_verified_at);
         }
 
         if ($request->has("is_active")) {
@@ -63,15 +86,15 @@ class BorrowerController extends Controller
             });
         }
 
-        $sort_by = $request->get('sort_by', 'created_at');
-        $sort_order = $request->get('sort_order','desc');
+        $sort_by = $request->input('sort_by', 'created_at');
+        $sort_order = $request->input('sort_order','desc');
         $query->orderBy($sort_by, $sort_order);
 
-        $borrowers = $query->paginate($request->get('per_page', 15));
+        $borrowers = $query->paginate($request->input('per_page', config('helper.default_pagination_length')));
 
         $statistics = [
             'total' => Borrower::count(),
-            'verified' => Borrower::where('is_verified', true)->count(),
+            'verified' => Borrower::where('email_verified_at', true)->count(),
             'active' => Borrower::where('is_active', true)->count(),
             'blocked' => Borrower::where('is_blocked', true)->count(),
         ];
@@ -81,22 +104,6 @@ class BorrowerController extends Controller
             'data' => $borrowers,
             'statistics' => $statistics
         ]);
-    }
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
     }
 
     /**
@@ -129,60 +136,6 @@ class BorrowerController extends Controller
             'financial_summary' => $financial_summary
         ]);
     }
-
-    /**
-     * Verify a borrower
-     *
-     * @param \Illuminate\Http\Request  $request
-     * @param int $id
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function verify(Request $request, int $id): JsonResponse
-    {
-        $validator = Validator::make($request->all(), [
-            'notes' => 'nullable|string|max:500',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors(),
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        $borrower = Borrower::findOrFail($id);
-
-        if ($borrower->is_verified) {
-            return response()->json([
-                'success'=> false,
-                'errors'=> 'Borrower is already verified',
-            ], Response::HTTP_BAD_REQUEST);
-        }
-        AuditLog::create([
-            'action' => 'Borrower verified',
-            'old_data' => [
-                'borrower_id' => $borrower->id,
-                'is_verified' => $borrower->is_verified ? 'Yes':'No',
-                'verified_at' => $borrower->verified_at,
-            ],
-            'new_data' => [
-                'borrower_id' => $borrower->id,
-                'is_verified' => 'Yes',
-                'verified_at' => Carbon::now(),
-                'notes' => $request->notes
-            ],
-            'user_id' => auth()->user()->id,
-        ]);
-
-        $borrower->verify();
-
-        return response()->json([
-            'success' => true,
-            'message' => 'Borrower verified successfully',
-            'data' => $borrower
-        ]);
-    }
-
 
     /**
      * Block a borrower

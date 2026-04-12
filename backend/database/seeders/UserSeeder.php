@@ -29,7 +29,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'login' => 'loanofficer1',
-            'email' => 'officer1@demo_a.com',
+            'email' => 'loanofficer1@demo_a.com',
             'password'=> bcrypt('officer123'),
             'first_name' => 'John',
             'last_name' => 'Smith',
@@ -42,7 +42,7 @@ class UserSeeder extends Seeder
 
         User::create([
             'login' => 'loanofficer2',
-            'email' => 'officer2@demo_a.com',
+            'email' => 'loanofficer2@demo_a.com',
             'password'=> bcrypt('officer124'),
             'first_name' => 'Sarah',
             'last_name' => 'Johnson',
@@ -62,6 +62,19 @@ class UserSeeder extends Seeder
             'role'=> 'moderator',
             'employee_id'=> 'MD001',
             'department'=> 'Customer Support',
+            'date_of_joining'=> Carbon::now()->subDays(20),
+            'is_active' => 1
+        ]);
+
+        User::create([
+            'login'=> 'officer1',
+            'email'=> 'officer3@demo_a.com',
+            'password'=> bcrypt('officer1234'),
+            'first_name'=> 'Teddy',
+            'last_name'=> 'Smith',
+            'role'=> 'officer',
+            'employee_id'=> 'OFF001',
+            'department'=> 'Loan Department',
             'date_of_joining'=> Carbon::now()->subDays(20),
             'is_active' => 1
         ]);

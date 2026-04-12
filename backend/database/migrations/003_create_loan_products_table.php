@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('loan_products', function (Blueprint $table) {
             $table->id();
             $table->string('name');
-            $table->string('description');
+            $table->text('description');
             $table->decimal('min_amount', 12, 2);
             $table->decimal('max_amount', 12, 2);
             $table->decimal('interest_rate', 5, 2);
@@ -27,7 +27,9 @@ return new class extends Migration
             $table->decimal('processing_fee_percentage', 5, 2)->default(0);
             $table->decimal('late_fee', 8, 2)->default(0);
             $table->boolean('is_active')->default(true);
+
             $table->timestamps();
+            $table->softDeletes();
         });
     }
 

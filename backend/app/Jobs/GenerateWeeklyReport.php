@@ -76,7 +76,7 @@ class GenerateWeeklyReport implements ShouldQueue
             'updated_at' => now(),
         ]);
 
-        $system_admins = User::where('role', 'admin')->where('is_verified', true)->get();
+        $system_admins = User::where('role', 'admin')->get();
 
         foreach ($system_admins as $admin) {
             try {

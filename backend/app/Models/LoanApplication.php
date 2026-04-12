@@ -66,6 +66,11 @@ class LoanApplication extends Model
         'closed_at' => 'datetime'
     ];
 
+    public function getRouteKeyName(): string
+    {
+        return 'application_uuid';
+    }
+
     public function borrower(): BelongsTo
     {
         return $this->belongsTo(Borrower::class);

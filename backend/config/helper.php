@@ -16,5 +16,17 @@ return [
     ],
     'default_query_get_limit' => 10,
     'notify_admin_on_new_loan_submission' => false,
-    'default_pagination_length' => 15
+    'default_pagination_length' => 15,
+    'active_application_limit' => 2,
+    'max_debt_ratio' => 50,
+    'loan' => [
+        'tenure_options' => [3, 6, 9, 12, 18, 24, 36, 48, 60],
+        'types' => [
+            1 => "Personal",
+            2 => "Business",
+            3 => "Education",
+            4 => "Auto",
+            5 => "Mortgage"
+        ]
+    ],
 ];

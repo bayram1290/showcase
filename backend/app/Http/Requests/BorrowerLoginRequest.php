@@ -75,7 +75,7 @@ class BorrowerLoginRequest extends FormRequest
             }
 
             // Optional: Check for pending verification
-            if ($borrower && !$borrower->is_verified) {
+            if ($borrower && !$borrower->email_verified_at) {
                 $validator->errors()->add(
                     'login',
                     'Your account is not yet verified. Please wait for verification (up to 24 business hours).'

@@ -13,11 +13,11 @@ return new class extends Migration
     {
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
-            $table->string('document_type'); // identity, income, address, etc.
+            $table->string('document_type')->nullable(); // identity, income, address, etc.
             $table->string('file_path');
             $table->string('file_name');
             $table->string('mime_type');
-            $table->decimal('file_size', 10, 2); // in KB
+            $table->string('file_size')->nullable();
             $table->boolean('is_verified')->default(false);
             $table->text('verification_notes')->nullable();
             $table->timestamp('verified_at')->nullable();

@@ -2,115 +2,173 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
+use App\Http\Requests\StoreLoanProductRequest;
+use App\Http\Requests\UpdateLoanProductRequest;
 use App\Models\LoanProduct;
-use Illuminate\Http\JsonResponse;
+use App\Services\LoanProductService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Response;
 
 class LoanProductController extends Controller
 {
+    protected LoanProductService $service;
+
+    /**
+     * Constructs a new instance of the LoanProductController.
+     *
+     * @param LoanProductService $service The service responsible for performing operations on loan products.
+     */
+    public function __construct(
+        LoanProductService $service
+    ) {
+        $this->service = $service;
+    }
+
+    /**
+     * List of loan products filtered by the request parameters, paginated by default.
+     *
+     * Parameters accepted are:
+     *   type: The type of the loan product (personal, mortgage, etc.)
+     *   is_active: Whether the loan product is active or not
+     *
+     * @return JsonResponse
+     */
     public function index(Request $request): JsonResponse
     {
-        $products = LoanProduct::active()->get();
+        $products = $this->service->list($request, request()->user());
 
-        return response()->json([
-            'success' => true,
-            'data' => $products
-        ]);
+        return ApiResponse::success($products, 'LIST_LOAN_PRODUCTS_SUCCESS', Response::HTTP_OK);
     }
 
-    public function store(Request $request): JsonResponse
+    /**
+     * Retrieves a loan product by product ID.
+     *
+     * @param LoanProduct $product The loan product to retrieve.
+     *
+     * @return JsonResponse The loan product.
+     *
+     * @throws \Exception
+     */
+    public function show(LoanProduct $product): JsonResponse
     {
-        $validator =  Validator::make($request->all(), [
-            'name' => 'required|string|max:255',
-            'description' => 'required|string',
-            'min_amount' => 'required|numeric|min:0',
-            'max_amount' => 'required|numeric|min:' . $request->min_amount,
-            'interest_rate' => 'required|numeric|min:0|max:100',
-            'interest_type' => 'required|in:fixed,variable',
-            'min_tenure' => 'required|integer|min:1',
-            'max_tenure' => 'required|integer|min:' . $request->min_tenure,
-            'type' => 'required|in:personal,mortgage,auto,business,education',
-            'processing_fee_percentage' => 'nullable|numeric|min:0|max:100',
-            'late_fee' => 'nullable|numeric|min:0'
-        ]);
+        try {
+            $product = $this->service->show($product, request()->user());
 
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
+            return ApiResponse::success($product, 'SHOW_LOAN_PRODUCT_SUCCESS', Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'SHOW_LOAN_PRODUCT_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
-
-        $product = LoanProduct::create($request->all());
-
-        return  response()->json([
-            'success'=> true,
-            'message' => 'Loan product created successfully',
-            'data' => $product
-        ], 201);
     }
 
-    public function update(Request $request, int $id) {
-
-        $product = LoanProduct::findOrFail($id);
-
-        $validator = Validator::make($request->all(), [
-            'name' => 'sometimes|required|string|max:255',
-            'description' => 'sometimes|required|string',
-            'min_amount' => 'sometimes|required|numeric|min:0',
-            'max_amount' => 'sometimes|required|numeric|min:' . ($request->min_amount ?? $product->min_amount),
-            'interest_rate' => 'sometimes|required|numeric|min:0|max:100',
-            'interest_type' => 'sometimes|required|in:fixed,variable',
-            'min_tenure' => 'sometimes|required|integer|min:1',
-            'max_tenure' => 'sometimes|required|integer|min:' . ($request->min_tenure ?? $product->min_tenure),
-            'is_active' => 'sometimes|boolean'
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], 422);
-        }
-
-        $product->update($request->all());
-
-        return response()->json([
-            'success'=> true,
-            'message'=> 'Loan product updated successfully'
-        ]);
-
-    }
-
-    public function destroy(int $id): JsonResponse
+    /**
+     * "Moderator" route only
+     * Creates a new loan product.
+     *
+     * @param StoreLoanProductRequest $request
+     * @return JsonResponse
+     *
+     * @throws \Exception
+     */
+    public function store(StoreLoanProductRequest $request): JsonResponse
     {
+        try {
+            $product = $this->service->store($request->validated());
 
-        $product = LoanProduct::findOrFail($id);
+            return ApiResponse::success($product, 'CREATE_LOAN_PRODUCT_SUCCESS', Response::HTTP_CREATED);
 
-        if ($product->loanApplication()->exists()) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Loan product cannot be deleted because it has loan applications'
-            ], 400);
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'CREATE_LOAN_PRODUCT_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
         }
-
-        $product->delete();
-
-        return response()->json([
-            'success'=> true,
-            'message'=> 'Loan product deleted successfully'
-        ]);
     }
 
-    public function show(int $id): JsonResponse
+    /**
+     * "Moderator" route only
+     * Updates a loan product.
+     *
+     * @param UpdateLoanProductRequest $request The request containing the updated loan product data.
+     * @param LoanProduct $loanProduct The loan product to update.
+     *
+     * @return JsonResponse The updated loan product.
+     *
+     * @throws \Exception
+     */
+    public function update(UpdateLoanProductRequest $request, LoanProduct $loanProduct): JsonResponse
     {
-        $product = LoanProduct::findOrFail($id);
+        try {
+            $product = $this->service->update($loanProduct, $request->validated());
 
-        return response()->json([
-            'success'=> true,
-            'data' => $product
-        ]);
+            return ApiResponse::success($product, 'UPDATE_LOAN_PRODUCT_SUCCESS', Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'UPDATE_LOAN_PRODUCT_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+    }
+
+    /**
+     * "Moderator" route only
+     * Toggles the active status of a loan product.
+     *
+     * @param LoanProduct $loanProduct The loan product to toggle active status.
+     *
+     * @return JsonResponse The response containing a success message or an error message.
+     *
+     * @throws \Exception
+     */
+    public function updateStatus(LoanProduct $loanProduct): JsonResponse
+    {
+        try {
+            $this->service->toggleActive($loanProduct);
+
+            return ApiResponse::success(null, 'UPDATE_LOAN_PRODUCT_STATUS_SUCCESS', Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'UPDATE_LOAN_PRODUCT_STATUS_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+    }
+
+    /**
+     * "Moderator" route only
+     * Deletes a loan product.
+     *
+     * @param LoanProduct $loanProduct The loan product to delete.
+     *
+     * @return JsonResponse The response containing a success message or an error message.
+     *
+     * @throws \Exception
+     */
+    public function destroy(LoanProduct $loanProduct): JsonResponse
+    {
+        try {
+            $this->service->destroy($loanProduct);
+
+            return ApiResponse::success(null, 'DELETE_LOAN_PRODUCT_SUCCESS', Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'DELETE_LOAN_PRODUCT_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
     }
 }

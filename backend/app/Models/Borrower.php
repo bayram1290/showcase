@@ -50,7 +50,8 @@ class Borrower extends Authenticatable implements MustVerifyEmail
         'is_blocked',
         'preferred_contact_method',
         'marital_status',
-        'dependents'
+        'dependents',
+        'email_verified_at',
     ];
 
     protected $hidden = [

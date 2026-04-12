@@ -39,7 +39,7 @@ class ApiResponse
             'message' => $message,
         ];
 
-        if (!$errorCode !== null) {
+        if ($errorCode !== null) {
             $response['error_code'] = $errorCode;
         }
 
