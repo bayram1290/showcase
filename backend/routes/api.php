@@ -5,22 +5,21 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\API\{
     LoanApplicationController,
     DocumentController,
-    // DashboardController,
-    // LoanAccountController,
-    // CreditCheckController,
-    // AuthController,
+    CreditCheckController,
     UserController,
-    // BorrowerController
     SystemAuthController,
     BorrowerAuthController,
     EmailVerificationController,
     LoanProductController,
+    // DashboardController,
+    // LoanAccountController,
+    // BorrowerController
 };
 
 Route::get('loan-products', [LoanProductController::class, 'index']);
 Route::get('loan-products/{id}', [LoanProductController::class, 'show']);
 
-// System user routes
+// System user auth routes
 Route::prefix('user')->group(function (){
     Route::post('/login', [SystemAuthController::class, 'login']);
 
@@ -39,8 +38,10 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(functi
     Route::post('/users/{user}/deactivate', [UserController::class, 'deactivate']);
 });
 
+// Loan officer and officer routes
 Route::middleware(['auth:sanctum', 'role:loan_officer,officer'])->group(function() {
 
+    // Loan application management routes
     Route::prefix('applications/management')->group(function() {
         Route::get('/', [LoanApplicationController::class, 'index']);
         Route::get('/{application:application_uuid}', [LoanApplicationController::class, 'show']);
@@ -50,6 +51,11 @@ Route::middleware(['auth:sanctum', 'role:loan_officer,officer'])->group(function
 
     Route::post('/documents/{document}/verify', [DocumentController::class, 'verify']);
     // Route::post('/applications/{application:application_uuid}/management-restore', [LoanApplicationController::class, 'managerRestore']);
+
+    // Credit check routes
+    Route::post('/credit-check/internal', [CreditCheckController::class, 'internalCheck']);
+    Route::post('/credit-check/external', [CreditCheckController::class, 'externalCheck']);
+    Route::get('/user/credit-check/{application:application_uuid}', [CreditCheckController::class, 'checkForApplication'])->where('application_uuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
 });
 
 // Borrower routes
@@ -64,6 +70,7 @@ Route::prefix('borrower')->group(function () {
         Route::post('/logout', [BorrowerAuthController::class, 'logout']);
         Route::get('/profile', [BorrowerAuthController::class, 'profile']);
 
+        // Borrower applications
         Route::prefix('applications')->group(function() {
             Route::post('/', [LoanApplicationController::class, 'store']);
             Route::get('/', [LoanApplicationController::class, 'myApplications']);
@@ -75,9 +82,14 @@ Route::prefix('borrower')->group(function () {
             Route::post('/{application:application_uuid}/documents', [DocumentController::class, 'upload']);
             Route::delete('/{application:application_uuid}/documents/{document}', [DocumentController::class, 'delete']);
         });
+
+        // Credit check route
+        Route::get('/credit-check/{application:application_uuid}', [CreditCheckController::class, 'checkForApplication'])->where('application_uuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+
     });
 });
 
+// Moderator routes
 Route::prefix('loan-products')->middleware(['auth:sanctum', 'role:moderator'])->group(function() {
     Route::post('/', [LoanProductController::class, 'store']);
     Route::put('/{loanProduct}', [LoanProductController::class, 'update']);

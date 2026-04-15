@@ -2,99 +2,124 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Contracts\Services\CreditCheckServiceInterface;
+use App\DataTransferObjects\CreditCheckData;
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\AuditLog;
-use App\Models\CreditCheck;
+use App\Http\Requests\ExternalCreditCheckRequest;
+use App\Http\Requests\InternalCreditCheckRequest;
+use App\Models\Borrower;
+use App\Models\User;
 use App\Models\LoanApplication;
-use Carbon\Carbon;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class CreditCheckController extends Controller
 {
-    protected $min_credit_score = 600;
+    protected CreditCheckServiceInterface $service;
 
-    public function performCreditCheck(Request $request, $uuid): JsonResponse
-    {
-
-        $validator = Validator::make($request->all(), [
-            'credit_score'=> 'required|integer|min:300|max:850',
-            'debt_to_income_ratio' => 'required|integer|min:0',
-            'remarks' => 'nullable|string',
-        ]);
-
-        if ($validator->fails()) {
-            return response()->json([
-                'success' => false,
-                'errors' => $validator->errors()
-            ], Response::HTTP_UNPROCESSABLE_ENTITY);
-        }
-
-        $application = LoanApplication::where('application_uuid', $uuid)
-                        ->where('status', 'under_review')
-                        ->first();
-
-        $credit_check = CreditCheck::updateOrCreate([
-            ['loan_application_id' => $application->id],
-            [
-                'credit_score' => $request->credit_score,
-                'debt_to_income_ratio' => $request->debt_to_income_ratio,
-                'remarks' => $request->remarks,
-                'checked_by' => $request->user()->id,
-                'credit_report_data' => [
-                    'fake_data' => true,
-                    'checked_at' => Carbon::now()->toDateTimeString(),
-                    'bureau' => 'Fake Credit Bureau'
-                ]
-            ]
-        ]);
-
-        if ($credit_check->credit_score < $this->min_credit_score) {
-            $application->update([
-                'status' => 'rejected',
-                'rejection_reason' => 'Insufficient credit score',
-            ]);
-
-        } elseif ($application->status == 'under_review') {
-            $application->update(['status' => 'approved']);
-        }
-
-        AuditLog::create([
-            'action' => 'credit_check_performed',
-            'user_id' => $request->user()->id,
-            'loan_application_id' => $application->id,
-            'new_data' => $credit_check->toArray()
-        ]);
-
-        return response()->json([
-            'success'=> true,
-            'message' => 'Credit check performed successfully',
-            'data' => $credit_check,
-            'application_status' => $application->status
-        ], Response::HTTP_OK);
-
+    public function __construct(
+        CreditCheckServiceInterface $service
+    ) {
+        $this->service = $service;
     }
 
-    public function getCreditCheck(int $id): JsonResponse
+    /**
+     * Calculate internal credit score for a given loan application.
+     * The internal credit score is calculated using the credit check service.
+     *
+     * @param InternalCreditCheckRequest $request
+     * @return JsonResponse
+     */
+    public function internalCheck(InternalCreditCheckRequest $request): JsonResponse
     {
-        $application_id = LoanApplication::findOrFail($id)->id;
+        try {
+            $application = $request->getLoanApplication();
+            $dto = new CreditCheckData(
+                loanApplicationId: $application->id,
+                checkedByUserId: request()->user()?->id
+            );
 
-        $credit_check = CreditCheck::with('checkedBy')
-                        ->where('loan_application_id', $application_id)->first();
+            $credit_check = $this->service->calculateInternalScore($dto);
+            return ApiResponse::success($credit_check, 'INTERNAL_CREDIT_CHECK_SUCCESS', Response::HTTP_OK);
 
-        if (!$credit_check) {
-            return response()->json([
-                'success'=> false,
-                'message'=> 'Credit check not found. Please perform a credit check first.',
-            ], 404);
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'CREDIT_CHECK_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+    }
+
+    /**
+     * Fetch external credit score from an external credit agency.
+     * The external credit score is fetched using the credit check service.
+     *
+     * @param ExternalCreditCheckRequest $request
+     * @return JsonResponse
+     * @throws \Exception
+     */
+    public function externalCheck(ExternalCreditCheckRequest $request): JsonResponse
+    {
+        try {
+            $external_data = $this->service->fetchExternalScore($request->ssn);
+
+            return ApiResponse::success(
+                $external_data,
+                'EXTERNAL_CREDIT_CHECK_SUCCESS',
+                Response::HTTP_OK
+            );
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'EXTERNAL_CREDIT_CHECK_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+    }
+
+    /**
+     * Retrieve credit check for a loan application (by loan application UUID)
+     * Authorisation depends on the authenticated user (staff or borrower)
+     * Allowed users: Borrower (owner of the application), Loan Officer or Officer (who is assigned to the application)
+     *
+     * @param LoanApplication $application
+     * @return JsonResponse
+     */
+    public function checkForApplication(LoanApplication $application): JsonResponse
+    {
+        $user = request()->user();
+        $return_data = [
+            'id',
+            'credit_score',
+        ];
+        if ($user instanceof Borrower) {
+            if ($application->borrower_id !== $user->id) {
+                return ApiResponse::forbidden('You are forbidden from accessing this application');
+            }
+
+        } else if (!$user->isLoanOfficer() && $user->id !== $application->assigned_officer_id) {
+            return ApiResponse::forbidden('You are not assigned to this application. Access denied.');
         }
 
-        return response()->json([
-            'success'=> true,
-            'data' => $credit_check
-        ]);
+        $credit_check = $this->service->getForApplication($application->id);
 
+        if (!$credit_check) {
+            return ApiResponse::error('No credit check found for this application', 'NOT_FOUND', Response::HTTP_NOT_FOUND);
+        }
+
+        if ($user instanceof User) {
+            $return_data = array_merge($return_data, [
+                'credit_report_data',
+                'debt_to_income_ratio',
+                'remarks',
+                'created_at',
+                'loan_application_id',
+                'checked_by'
+            ]);
+        }
+
+        return ApiResponse::success($credit_check->only($return_data), 'CREDIT_CHECK_SUCCESS', Response::HTTP_OK);
     }
 }

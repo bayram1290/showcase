@@ -34,10 +34,19 @@ class CreditCheck extends Model
 
      public function getCreditRatingAttribute(): string
     {
-        if ($this->credit_score >= 750) return 'Excellent';
-        if ($this->credit_score >= 700) return 'Good';
-        if ($this->credit_score >= 650) return 'Fair';
-        if ($this->credit_score >= 600) return 'Insufficient';
+        $ratings = [
+            750 => 'Excellent',
+            700 => 'Good',
+            650 => 'Fair',
+            600 => 'Insufficient',
+        ];
+
+        foreach ($ratings as $score => $rating) {
+            if ($this->credit_score >= $score) {
+                return $rating;
+            }
+        }
+
         return 'None';
     }
 

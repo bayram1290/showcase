@@ -147,7 +147,7 @@ class LoanProductService
      *
      * Throws an exception if the loan product has associated loan applications.
      *
-     * @param LoanProduct $product The loan product to be dd($product->only(['id', 'deleted_at']));deleted.
+     * @param LoanProduct $product The loan product to be deleted.
      *
      * @throws \Exception If the loan product could not be deleted.
      */

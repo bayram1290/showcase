@@ -59,7 +59,7 @@ class OfficerAssignmentService
             throw new \Exception('Application already has an assigned officer');
         }
 
-        if ($application->status !== 'submitted') {
+        if (!in_array($application->status, ['submitted', 'under_review'])) {
             throw new \Exception("Only submitted application can be assigned.");
         }
 
