@@ -225,7 +225,7 @@ class LoanApplicationService
      * @throws \Exception If the user does not have permission to update the application.
      * @throws \Exception If the status transition is invalid.
      */
-    public function updateStatus(LoanApplication $application, array $data, User $user): void
+    public function underReviewStatus(LoanApplication $application, array $data, User $user): void
     {
         if (!in_array($user->role, ['admin', 'loan_officer', 'officer'])) {
             throw new \Exception("You don't have permission to update this application.");
@@ -240,33 +240,18 @@ class LoanApplicationService
         }
 
         $old_status =$application->status;
-        $new_status =$data['status'];
         $update_data = [
-            'status' => $new_status,
+            'status' => 'under_review',
+            'review_score' => $this->calculateIniitialReviewScore($application),
+            'review_notes' => $data['review_notes'] ?? null,
+            'reviewed_at' => Carbon::now(),
         ];
-
-        switch ($new_status) {
-            case 'under_review':
-                $update_data['review_score'] = $this->calculateIniitialReviewScore($application);
-                $update_data['review_notes'] = $data['review_notes'] ?? null;
-                $update_data['reviewed_at'] = Carbon::now();
-                break;
-            case 'rejected':
-                $update_data['rejection_reason'] = $data['rejection_reason'] ?? null;
-                $update_data['closed_at'] = Carbon::now();
-                break;
-            case 'approved':
-                $update_data['approved_at'] = Carbon::now();
-                break;
-            default:
-                throw new \Exception("Invalid status transition: {$old_status} -> {$new_status}");
-        }
 
         $old_data = $application->toArray();
         $application->update($update_data);
 
         AuditLog::create([
-            'action' => 'application_status_changed_from_' . $old_status . '_to_' . $new_status,
+            'action' => 'application_status_changed_from_' . $old_status . '_to_' . $update_data['status'],
             'user_id' => $user->id,
             'loan_application_id' => $application->id,
             'old_data' => $old_data,

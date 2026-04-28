@@ -41,14 +41,6 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(functi
 // Loan officer and officer routes
 Route::middleware(['auth:sanctum', 'role:loan_officer,officer'])->group(function() {
 
-    // Loan application management routes
-    Route::prefix('applications/management')->group(function() {
-        Route::get('/', [LoanApplicationController::class, 'index']);
-        Route::get('/{application:application_uuid}', [LoanApplicationController::class, 'show']);
-        Route::post('/{application:application_uuid}/status', [LoanApplicationController::class, 'updateStatus']); // Approval, Rejection are under process
-        Route::post('/{application:application_uuid}/assign', [LoanApplicationController::class, 'assignOfficer']);
-    });
-
     Route::post('/documents/{document}/verify', [DocumentController::class, 'verify']);
     // Route::post('/applications/{application:application_uuid}/management-restore', [LoanApplicationController::class, 'managerRestore']);
 
@@ -56,6 +48,23 @@ Route::middleware(['auth:sanctum', 'role:loan_officer,officer'])->group(function
     Route::post('/credit-check/internal', [CreditCheckController::class, 'internalCheck']);
     Route::post('/credit-check/external', [CreditCheckController::class, 'externalCheck']);
     Route::get('/user/credit-check/{application:application_uuid}', [CreditCheckController::class, 'checkForApplication'])->where('application_uuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
+});
+
+// Loan application management routes
+Route::prefix('applications/management')->group(function() {
+
+    Route::middleware(['auth:sanctum', 'role:loan_officer,supervisor'])->group(function() {
+        Route::get('/pending', [LoanApplicationController::class, 'pendingApplications']);
+        Route::post('/{application:application_uuid}/approve', [LoanApplicationController::class, 'approveStatus']);
+        Route::post('/{application:application_uuid}/reject', [LoanApplicationController::class, 'rejectStatus']);
+    });
+
+    Route::middleware(['auth:sanctum', 'role:loan_officer,officer'])->group(function() {
+        Route::get('/', [LoanApplicationController::class, 'index']);
+        Route::get('/{application:application_uuid}', [LoanApplicationController::class, 'show']);
+        Route::post('/{application:application_uuid}/under_review', [LoanApplicationController::class, 'underReviewStatus']);
+        Route::post('/{application:application_uuid}/assign', [LoanApplicationController::class, 'assignOfficer']);
+    });
 });
 
 // Borrower routes
@@ -85,7 +94,6 @@ Route::prefix('borrower')->group(function () {
 
         // Credit check route
         Route::get('/credit-check/{application:application_uuid}', [CreditCheckController::class, 'checkForApplication'])->where('application_uuid', '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}');
-
     });
 });
 

@@ -4,17 +4,25 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Helpers\ApiResponse;
+use App\DataTransferObjects\ApprovalData;
+
 use App\Http\Requests\AdminRestoreRequest;
+use App\Http\Requests\ApprovalRequest;
 use App\Http\Requests\CancelLoanApplicationRequest;
 use App\Http\Requests\CreateLoanApplicationRequest;
 use App\Http\Requests\RestoreLoanApplicationRequest;
 use App\Http\Requests\SubmitLoanApplicationRequest;
 use App\Http\Requests\UpdateLoanStatusRequest;
+use App\Http\Resources\LoanApplicationResource;
+
 use App\Models\Borrower;
 use App\Models\LoanApplication;
 use App\Models\User;
+
 use App\Services\LoanApplicationService;
 use App\Services\OfficerAssignmentService;
+use App\Contracts\Services\ApprovalWorkflowServiceInterface;
+
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
@@ -24,12 +32,16 @@ class LoanApplicationController extends Controller
     protected LoanApplicationService $loanService;
     protected OfficerAssignmentService $officerService;
 
+    protected ApprovalWorkflowServiceInterface $approvalService;
+
     public function __construct(
         LoanApplicationService $service,
-        OfficerAssignmentService $officerService
+        OfficerAssignmentService $officerService,
+        ApprovalWorkflowServiceInterface $approvalService
     ) {
         $this->loanService = $service;
         $this->officerService = $officerService;
+        $this->approvalService = $approvalService;
     }
 
     /**
@@ -186,10 +198,10 @@ class LoanApplicationController extends Controller
      * @return JsonResponse
      * @throws \Exception
      */
-    public function updateStatus(UpdateLoanStatusRequest $request, LoanApplication $application): JsonResponse
+    public function underReviewStatus(UpdateLoanStatusRequest $request, LoanApplication $application): JsonResponse
     {
         try {
-            $this->loanService->updateStatus($application, $request->validated(), $request->user());
+            $this->loanService->underReviewStatus($application, $request->validated(), $request->user());
 
             return ApiResponse::success($application, 'UPDATE_APPLICATION_STATUS_SUCCESS', Response::HTTP_OK);
         } catch (\Exception $e) {
@@ -261,7 +273,7 @@ class LoanApplicationController extends Controller
      * - the loan product is not active or no longer available.
      *
      * @param RestoreLoanApplicationRequest $request
-     * @param int $id The ID of the loan application
+     * @param LoanApplication $application
      *
      * @return JsonResponse
      *
@@ -286,6 +298,20 @@ class LoanApplicationController extends Controller
         }
     }
 
+    /**
+     * Restore a loan application by an admin after being cancelled.
+     * Throws an error if:
+     * - the application is not cancelled or the current user does not own the application.
+     * - the cancelation date has passed more than 30 days.
+     * - the loan product is not active or no longer available.
+     *
+     * @param AdminRestoreRequest $request
+     * @param LoanApplication $application
+     *
+     * @return JsonResponse
+     *
+     * @throws \Exception
+     */
     public function managerRestore(AdminRestoreRequest $request, LoanApplication $application): JsonResponse
     {
         try {
@@ -303,5 +329,69 @@ class LoanApplicationController extends Controller
                 Response::HTTP_UNPROCESSABLE_ENTITY
             );
         }
+    }
+
+    public function approveStatus(ApprovalRequest $request, LoanApplication $application): JsonResponse
+    {
+
+        try {
+            $dto = new ApprovalData(
+                loanApplicationID: $application->id,
+                userID: $request->user()->id,
+                remarks: $request->validated('remarks')
+            );
+
+            $approved = $this->approvalService->approve($dto);
+            return ApiResponse::success(
+                $approved,
+                'APPROVE_APPLICATION_SUCCESS',
+                Response::HTTP_OK
+            );
+
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'APPROVE_APPLICATION_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+    }
+
+    public function rejectStatus(ApprovalRequest $request, LoanApplication $application): JsonResponse
+    {
+        try {
+            $dto = new ApprovalData(
+                loanApplicationID: $application->id,
+                userID: $request->user()->id,
+                remarks: $request->validated('remarks')
+            );
+
+            $rejected = $this->approvalService->reject($dto);
+
+            return ApiResponse::success(
+                $rejected,
+                'APPLICATION_REJECTION_SUCCESS',
+                Response::HTTP_OK
+            );
+        } catch (\Exception $e) {
+            return ApiResponse::error(
+                $e->getMessage(),
+                'APPLICATION_REJECTION_ERROR',
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+    }
+
+    public function pendingApplications(Request $request): JsonResponse
+    {
+        $filters = $request->only(['assigned_officer_id', 'amount_min', 'amount_max', 'date_from', 'date_to', 'per_page']);
+        $applications = $this->approvalService->getPendingApplications($filters);
+
+        return ApiResponse::success(
+            LoanApplicationResource::collection($applications),
+            'PENDING_APPLICATIONS_SUCCESS',
+            Response::HTTP_OK
+        );
+
     }
 }

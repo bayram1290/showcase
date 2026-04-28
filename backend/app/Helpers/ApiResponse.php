@@ -37,6 +37,8 @@ class ApiResponse
         $response = [
             'success' => false,
             'message' => $message,
+            'error_line' => debug_backtrace()[0]['line'],
+            'error_file' => debug_backtrace()[0]['file'],
         ];
 
         if ($errorCode !== null) {

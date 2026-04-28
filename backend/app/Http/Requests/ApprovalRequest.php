@@ -4,9 +4,8 @@ namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Validation\Rule;
 
-class UpdateLoanStatusRequest extends FormRequest
+class ApprovalRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -24,7 +23,7 @@ class UpdateLoanStatusRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'review_notes' => 'nullable|string',
+            'remarks' => 'nullable|string|max:1000',
         ];
     }
 }
