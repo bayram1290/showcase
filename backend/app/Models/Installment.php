@@ -72,6 +72,10 @@ class Installment extends Model
         $this->loanAccount->increment('principal_paid', $paid_principal);
         $this->loanAccount->increment('interest_paid', $paid_interest);
         $this->loanAccount->updateOutstandingBalance();
+
+        if ($this->loanAccount->installments()->where('status', '!=', 'paid')->count() === 0) {
+            $this->loanAccount->close();
+        }
     }
 
     public function isOverdue($amount = null): bool

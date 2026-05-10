@@ -198,7 +198,7 @@ class LoanApplicationController extends Controller
      * @return JsonResponse
      * @throws \Exception
      */
-    public function underReviewStatus(UpdateLoanStatusRequest $request, LoanApplication $application): JsonResponse
+    public function underReviewLoan(UpdateLoanStatusRequest $request, LoanApplication $application): JsonResponse
     {
         try {
             $this->loanService->underReviewStatus($application, $request->validated(), $request->user());
@@ -331,7 +331,7 @@ class LoanApplicationController extends Controller
         }
     }
 
-    public function approveStatus(ApprovalRequest $request, LoanApplication $application): JsonResponse
+    public function approveLoan(ApprovalRequest $request, LoanApplication $application): JsonResponse
     {
 
         try {
@@ -357,7 +357,7 @@ class LoanApplicationController extends Controller
         }
     }
 
-    public function rejectStatus(ApprovalRequest $request, LoanApplication $application): JsonResponse
+    public function rejectLoan(ApprovalRequest $request, LoanApplication $application): JsonResponse
     {
         try {
             $dto = new ApprovalData(

@@ -29,4 +29,7 @@ return [
             5 => "Mortgage"
         ]
     ],
+    'api_route' => [
+        'app_uuid_regex' => '[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}',
+    ]
 ];

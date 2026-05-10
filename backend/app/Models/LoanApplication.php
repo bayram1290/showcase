@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
-use Str;
+use Illuminate\Support\Str;
 
 class LoanApplication extends Model
 {
@@ -124,14 +124,14 @@ class LoanApplication extends Model
     public function calculateMonthlyInstallment()
     {
         $principal = $this->amount;
-        $monthlyRate = ($this->interest_rate / 100) / 12;
+        $monthly_rate = ($this->interest_rate / 100) / 12;
         $months = $this->tenure;
 
-        if ($monthlyRate == 0) {
+        if ($monthly_rate == 0) {
             return $principal / $months;
         }
 
-        return ($principal * $monthlyRate * pow(1 + $monthlyRate, $months)) / (pow(1 + $monthlyRate, $months) - 1);
+        return ($principal * $monthly_rate * pow(1 + $monthly_rate, $months)) / (pow(1 + $monthly_rate, $months) - 1);
     }
 
     public function calculateTotalPayable()

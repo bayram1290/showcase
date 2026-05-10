@@ -61,4 +61,16 @@ class LoanApplicationPolicy
 
         return [];
     }
+
+    /**
+     * Checks if the user has the appropriate role and if the loan application is in the approved status.
+     *
+     * @param User $user The user to check.
+     * @param LoanApplication $application The loan application to check.
+     * @return bool Returns `true` if the user can disburse the application, `false` otherwise.
+     */
+    public function disburseApplication(User $user, LoanApplication $application): bool
+    {
+        return in_array($user->role, ['loan_officer', 'supervisor']) && $application->status === 'approved';
+    }
 }

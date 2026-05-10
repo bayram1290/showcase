@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -63,44 +64,16 @@ class LoanAccount extends Model
         $this->save();
     }
 
-    public function disburse($amount): void
-{
-
-        $this->update([
-            'disbursed_amount' => $amount,
-            'outstanding_balance' => $amount,
-            'status' => 'active'
-        ]);
-
-        $this->createInstallments();
-    }
-
-    private function createInstallments(): void
-    {
-        $application = $this->loanApplication;
-        $installment_amount = $application->monthly_installment;
-        $principal_per_installment = $application->amount / $application->tenure;
-        $interest_per_installment = $installment_amount - $principal_per_installment;
-
-        for ($j = 1; $j <= $application->tenure; $j++) {
-            Installment::create([
-                'loan_account_id' => $this->id,
-                'installment_number' => $j,
-                'due_date' => now()->addMonths($j)->startOfMonth()->addDays(5),
-                'due_amount' => $installment_amount,
-                'principal_amount' => $principal_per_installment,
-                'interest_amount' => $interest_per_installment,
-                'status' => 'pending'
-            ]);
-        }
-
-        $this->update([
-            'next_installment_date' => now()->addMonths(1)->startOfMonth()->addDays(5)
-        ]);
-    }
-
-    public function scopeActive($query): Builder
+    public function scopeActive(Builder $query): Builder
     {
         return $query->where('loan_accounts.status', 'active');
+    }
+
+    public function close(string $status = 'closed'): void
+    {
+        $this->update([
+            'status' => $status,
+            'closed_at' => Carbon::now()
+        ]);
     }
 }

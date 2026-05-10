@@ -23,6 +23,7 @@ return new class extends Migration
             $table->decimal('late_fee', 8, 2)->default(0);
             $table->enum('status', ['pending', 'paid', 'overdue', 'partial'])->default('pending');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreignId('loan_account_id')->constrained()->onDelete('cascade');
         });

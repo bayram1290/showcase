@@ -58,7 +58,7 @@ class ApprovalWorkflowService implements ApprovalWorkflowServiceInterface
         return DB::transaction(function () use ($application, $user, $data) {
             $application->update([
                 'status' => self::REJECT_STR,
-                'rejection_notes' => $data->remarks,
+                'rejection_reason' => $data->remarks,
                 'closed_at' => Carbon::now(),
             ]);
 

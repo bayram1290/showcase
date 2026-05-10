@@ -2,17 +2,25 @@
 
 namespace App\Http\Controllers\API;
 
+use App\Helpers\ApiResponse;
 use App\Http\Controllers\Controller;
-use App\Models\AuditLog;
-use App\Models\Installment;
-use App\Models\LoanAccount;
+
+use App\Http\Resources\LoanAccountResource;
+use App\Models\Borrower;
 use App\Models\LoanApplication;
+use App\Models\User;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Response;
+
+// use App\Models\AuditLog;
+// use App\Models\Installment;
+// use App\Models\LoanAccount;
+// use Illuminate\Http\Request;
+// use Illuminate\Support\Facades\Validator;
 
 class LoanAccountController extends Controller
 {
+    /**
     public function performCreditCheck(Request $request, int $application_id): JsonResponse {
 
         $validator = Validator::make($request->all(), [
@@ -206,5 +214,55 @@ class LoanAccountController extends Controller
             'success' => true,
             'message' => 'Loan account closed successfully'
         ]);
+    }
+    */
+
+    /**
+     * Retrieve the installments for a loan account associated with a given loan application.
+     *
+     * @param LoanApplication $application The loan application object.
+     * @return JsonResponse The JSON response containing the installments for the loan account.
+     *
+     * @throws \Exception If the loan account is not found.
+     *
+     * @return ApiResponse The API response with the installments for the loan account.
+     *
+     * @throws \Exception If the user is unauthorized to view the loan account.
+     */
+    public function showInstallments(LoanApplication $application): JsonResponse
+    {
+        $user = request()->user();
+
+        $loan_account = $application->loanAccount;
+
+        if (!$loan_account) {
+            return ApiResponse::error('No loan account found for this application.', 'NOT_FOUND', Response::HTTP_NOT_FOUND);
+        }
+
+        $loan_account->loadMissing('loanApplication'); // Load the loanApplication relationship if not already loaded
+
+        if ($user instanceof Borrower) {
+
+            if ($application->borrower_id !== $user->id) {
+                return ApiResponse::forbidden('You are NOT authorized to view this loan account.');
+            }
+        }
+
+        if ($user instanceof User) {
+            $allowed_user_roles = ['supervisor', 'loan_officer', 'officer'];
+            if (!in_array($user->role, $allowed_user_roles)) {
+               return ApiResponse::forbidden('You are unauthorized.');
+            }
+
+            if ($user->role === 'officer') {
+                if ($application->assigned_officer_id !== $user->id) {
+                    return ApiResponse::forbidden('You are NOT authorized and assigned to the loan account.');
+                }
+            }
+        }
+
+        $loan_account = $loan_account->load('installments');
+
+        return ApiResponse::success(new LoanAccountResource($loan_account, $user), 'SHOW_INSTALLMENTS_SUCCESS', Response::HTTP_OK);
     }
 }

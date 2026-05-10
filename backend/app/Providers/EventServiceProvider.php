@@ -4,10 +4,15 @@ namespace App\Providers;
 
 use App\Events\LoanApplicationApproved;
 use App\Events\LoanApplicationRejected;
+use App\Events\LoanDisbursement;
+
 use App\Listeners\LogApprovalAudit;
 use App\Listeners\LogRejectionAudit;
 use App\Listeners\SendApprovalNotification;
 use App\Listeners\SendRejectionNotification;
+use App\Listeners\SendDisbursementNotification;
+use App\Listeners\LogDisbursementAudit;
+
 use Illuminate\Foundation\Support\Providers\EventServiceProvider as ServiceProvider;
 
 class EventServiceProvider extends ServiceProvider
@@ -25,6 +30,10 @@ class EventServiceProvider extends ServiceProvider
         LoanApplicationRejected::class => [
             SendRejectionNotification::class,
             LogRejectionAudit::class
+        ],
+        LoanDisbursement::class => [
+            SendDisbursementNotification::class,
+            LogDisbursementAudit::class
         ],
     ];
 

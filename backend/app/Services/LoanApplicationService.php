@@ -540,12 +540,12 @@ class LoanApplicationService
      * The score is fanilized at 0 and 100.
      *
      * @param LoanApplication $application The loan application to calculate the score for.
-     * @return int The calculated review score.
+    * @return int The calculated review score.
      */
-    private function calculateIniitialReviewScore(LoanApplication $applicaiton): int
+    private function calculateIniitialReviewScore(LoanApplication $application): int
     {
         $score = self::INITIAL_REVIEW_SCORE;
-        $borrower = $applicaiton->borrower;
+        $borrower = $application->borrower;
 
         if ($borrower) {
             if ($borrower->employment_duration > 12) {
@@ -561,7 +561,7 @@ class LoanApplicationService
                 elseif ($debt_ratio < self::DEBT_THRESHOLDS[1]) $score += 5;
                 else $score -= 10;
 
-                $amount_ratio = ($applicaiton->amount / $borrower->monthly_income) * 100;
+                $amount_ratio = ($application->amount / $borrower->monthly_income) * 100;
 
                 if ($amount_ratio < self::AMOUNT_THRESHOLDS[0]) $score += 15;
                 elseif ($amount_ratio < self::AMOUNT_THRESHOLDS[1]) $score += 5;

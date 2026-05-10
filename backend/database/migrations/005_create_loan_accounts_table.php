@@ -23,6 +23,7 @@ return new class extends Migration
             $table->enum('status', ['active', 'closed', 'defaulted', 'settled'])->default('active');
             $table->date('closed_at')->nullable();
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreignId('loan_application_id')->constrained()->onDelete('cascade');
         });
