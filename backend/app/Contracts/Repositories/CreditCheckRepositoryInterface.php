@@ -13,7 +13,7 @@ interface CreditCheckRepositoryInterface
      * Create a new CreditCheck.
      *
      * @param array $data The data to create the CreditCheck with.
-     * @return CreditCheck The created CreditCheck.
+     * @return array The created CreditCheck with only the necessary attributes.
      */
     public function create(array $data): array;
 

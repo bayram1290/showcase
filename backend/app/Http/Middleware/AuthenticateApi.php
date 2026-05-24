@@ -3,6 +3,7 @@
 namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
+use Illuminate\Auth\AuthenticationException;
 
 class AuthenticateApi extends \Illuminate\Auth\Middleware\Authenticate
 {

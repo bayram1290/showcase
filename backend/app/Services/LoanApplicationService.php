@@ -243,7 +243,7 @@ class LoanApplicationService
         $update_data = [
             'status' => 'under_review',
             'review_score' => $this->calculateIniitialReviewScore($application),
-            'review_notes' => $data['review_notes'] ?? null,
+            'review_notes' => json_encode($data['review_notes']) ?? null,
             'reviewed_at' => Carbon::now(),
         ];
 
@@ -258,7 +258,6 @@ class LoanApplicationService
             'new_data' => $application->toArray(),
         ]);
     }
-
 
     /**
      * Cancels a loan application.

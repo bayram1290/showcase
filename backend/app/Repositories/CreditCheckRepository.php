@@ -11,7 +11,7 @@ class CreditCheckRepository implements CreditCheckRepositoryInterface
      * Create a new credit check.
      *
      * @param array $data The credit check data to create.
-     * @return \App\Models\CreditCheck The newly created credit check.
+     * @return array The newly created credit check.
      */
     public function create(array $data): array
     {

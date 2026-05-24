@@ -11,6 +11,7 @@ use App\Helpers\ApiResponse;
 use App\Http\Requests\DisbursementRequest;
 use App\Http\Resources\LoanAccountResource;
 use App\Models\LoanApplication;
+use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Response;
 
 class DisbursementController extends Controller
@@ -23,7 +24,15 @@ class DisbursementController extends Controller
         $this->service = $service;
     }
 
-    public function disburseLoan(DisbursementRequest $request, LoanApplication $application) {
+    /**
+     * Disburse a loan based on the provided disbursement request and loan application.
+     *
+     * @param DisbursementRequest $request The disbursement request containing the necessary data for the disbursement.
+     * @param LoanApplication $application The loan application associated with the disbursement.
+     * @return JsonResponse The response containing the result of the disbursement.
+     */
+    public function disburseLoan(DisbursementRequest $request, LoanApplication $application): JsonResponse
+    {
         try {
             $dto = DisbursementData::fromRequest([
                 'loan_application_id' => $application->id,

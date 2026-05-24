@@ -117,45 +117,50 @@ class DisbursementService implements DisbursementServiceInterface
 
         return self::LOAN_ACCOUNT_NUMBER_PREFIX . Carbon::now()->timestamp . Str::random(2);
     }
+
     /**
-     * Generate an amortization schedule for a loan account based on the loan application details.
+     * Generate the amortization schedule for a loan account based on the loan application details.
      *
-     * @param LoanAccount $loan_account The loan account for which the amortization schedule is generated.
-     * @param LoanApplication $application The loan application details.
+     * @param LoanAccount $loanAccount The loan account for which to generate the amortization schedule.
+     * @param LoanApplication $application The loan application containing the details for the amortization schedule.
      * @return void
      */
-    private function generateAmortizationSchedule(LoanAccount $loan_account, LoanApplication $application): void
+    private function generateAmortizationSchedule(LoanAccount $loanAccount, LoanApplication $application): void
     {
-        $principal = $application->amount;
-        $monthly_rate = $application->interest_rate / 100 / 12;
+        $total_payable = $application->amount;
         $tenure = $application->tenure;
-        $monthly_installment = $application->monthly_installment;
+        $monthly_rate = $application->interest_rate / 100 / 12;
+        $principal = $application->amount;
+
+        $base_monthly_installment = (int) floor($total_payable / $tenure);
+        $remainder = $total_payable - ($base_monthly_installment * $tenure);
+        $first_month_installment = $base_monthly_installment + $remainder;
 
         $remaining_principal = $principal;
         $due_date = Carbon::now()->addMonth();
 
         for ($iter = 1; $iter <= $tenure; $iter++) {
-            $interest_amount = $remaining_principal * $monthly_rate;
-            $principal_amount = $monthly_installment - $interest_amount;
+            $due_amount = ($iter == 1) ? $first_month_installment : $base_monthly_installment;
 
-            // Last installment adjustment
-            if ($iter === $tenure) {
-                $principal_amount = $remaining_principal;
-                $interest_amount = $monthly_installment - $principal_amount;
+            $interest = $remaining_principal * $monthly_rate;
+            $principal_portion = $due_amount - $interest;
 
-                if ($interest_amount < 0) $interest_amount = 0;
+            if ($iter == $tenure) {
+                $principal_portion = $remaining_principal;
+                $interest = $due_amount - $principal_portion;
+                if ($interest < 0) $interest = 0;
             }
 
-            $loan_account->installments()->create([
+            $loanAccount->installments()->create([
                 'installment_number' => $iter,
                 'due_date' => $due_date,
-                'due_amount' => $monthly_installment,
-                'principal_amount' => $principal_amount,
-                'interest_amount' => $interest_amount,
+                'due_amount' => round($due_amount, 2),
+                'principal_amount' => round($principal_portion, 2),
+                'interest_amount' => round($interest, 2),
                 'status' => self::LOAN_INSTALLMENT_PENDING_STATUS_STR,
             ]);
 
-            $remaining_principal -= $principal_amount;
+            $remaining_principal -= $principal_portion;
             $due_date = $due_date->addMonth();
         }
     }

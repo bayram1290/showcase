@@ -4,7 +4,6 @@ namespace Database\Seeders;
 
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
@@ -76,6 +75,19 @@ class UserSeeder extends Seeder
             'employee_id'=> 'OFF001',
             'department'=> 'Loan Department',
             'date_of_joining'=> Carbon::now()->subDays(20),
+            'is_active' => 1
+        ]);
+
+        User::create([
+            'login' => 'cashier1',
+            'email' => 'cashier1@demo_a.com',
+            'password'=> bcrypt('cashier123'),
+            'first_name' => 'Natalie',
+            'last_name' => 'Garcia',
+            'role' => 'cashier',
+            'employee_id' => 'CASH001',
+            'department' => 'Operations Department',
+            'date_of_joining' => Carbon::now()->subDays(20),
             'is_active' => 1
         ]);
     }

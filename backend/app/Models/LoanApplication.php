@@ -121,17 +121,20 @@ class LoanApplication extends Model
         return $query->where('status', 'approved');
     }
 
-    public function calculateMonthlyInstallment()
+    /**
+     * Calculate the monthly installment amount for a loan based on the principal amount, interest rate, and tenure.
+     *
+     * @return float The monthly installment amount rounded down to the nearest whole number.
+     */
+    public function calculateMonthlyInstallment(): float
     {
         $principal = $this->amount;
         $monthly_rate = ($this->interest_rate / 100) / 12;
         $months = $this->tenure;
 
-        if ($monthly_rate == 0) {
-            return $principal / $months;
-        }
+        $base_monthly_installment = $monthly_rate == 0 ? ($principal / $months) : $base_monthly_installment = ($principal * $monthly_rate * pow(1 + $monthly_rate, $months)) / (pow(1 + $monthly_rate, $months) - 1);
 
-        return ($principal * $monthly_rate * pow(1 + $monthly_rate, $months)) / (pow(1 + $monthly_rate, $months) - 1);
+        return floor($base_monthly_installment);
     }
 
     public function calculateTotalPayable()

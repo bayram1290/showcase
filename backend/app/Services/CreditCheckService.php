@@ -2,14 +2,14 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\DB;
+
 use App\Contracts\Repositories\CreditCheckRepositoryInterface;
 use App\Contracts\Services\CreditCheckServiceInterface;
 use App\DataTransferObjects\CreditCheckData;
 use App\Models\CreditCheck;
 use App\Models\LoanApplication;
 use Carbon\Carbon;
-use DB;
-
 
 class CreditCheckService implements CreditCheckServiceInterface
 {
@@ -53,9 +53,9 @@ class CreditCheckService implements CreditCheckServiceInterface
      * The final score will be capped between 0 and 1000.
      *
      * @param CreditCheckData $data The data to calculate the internal credit score with.
-     * @return CreditCheck The calculated internal credit score.
+     * @return array The calculated internal credit score as an array.
      */
-    public function calculateInternalScore(CreditCheckData $data): CreditCheck
+    public function calculateInternalScore(CreditCheckData $data): array
     {
         $application = LoanApplication::with('borrower')->findOrFail($data->loanApplicationId);
         $borrower = $application->borrower;

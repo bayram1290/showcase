@@ -14,9 +14,9 @@ interface CreditCheckServiceInterface
      * Calculate the internal credit check score.
      *
      * @param CreditCheckData $data
-     * @return CreditCheck
+     * @return array
      */
-    public function calculateInternalScore(CreditCheckData $data): CreditCheck;
+    public function calculateInternalScore(CreditCheckData $data): array;
 
     /**
      * Fetch the external credit check score.

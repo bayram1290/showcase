@@ -15,6 +15,7 @@ use App\Http\Controllers\API\{
     LoanAccountController,
     // BorrowerController,
     DisbursementController,
+    RepaymentController,
 };
 
 Route::get('loan-products', [LoanProductController::class, 'index']);
@@ -100,12 +101,17 @@ Route::prefix('borrower')->group(function () {
         Route::get('/credit-check/{application:application_uuid}', [CreditCheckController::class, 'checkForApplication'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
 
         // Loan accounts installments
-        Route::get('/loan-accounts/{application:application_uuid}/show', [LoanAccountController::class, 'showInstallments'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
+        Route::prefix('loan-accounts')->group(function() {
+            Route::get('/{application:application_uuid}/show', [LoanAccountController::class, 'showInstallments'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
+            Route::post('/{installment:installment_uuid}/repayment', [RepaymentController::class, 'makeRepayment']);
+        });
     });
-
 });
 
-Route::get('/loan-accounts/{application:application_uuid}/show', [LoanAccountController::class, 'showInstallments'])->middleware(['auth:sanctum', 'role:loan_officer,officer,supervisor'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
+Route::prefix('loan-accounts')->middleware('auth:sanctum')->group(function() {
+    Route::get('/{application:application_uuid}/show', [LoanAccountController::class, 'showInstallments'])->middleware(['role:loan_officer,officer,supervisor'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
+    Route::post('/{installment:installment_uuid}/repayment', [RepaymentController::class, 'makeRepayment'])->middleware(['role:cashier']);
+});
 
 // Moderator routes
 Route::prefix('loan-products')->middleware(['auth:sanctum', 'role:moderator'])->group(function() {
@@ -114,4 +120,3 @@ Route::prefix('loan-products')->middleware(['auth:sanctum', 'role:moderator'])->
     Route::delete('/{loanProduct}', [LoanProductController::class, 'destroy']);
     Route::patch('/{loanProduct}/status', [LoanProductController::class, 'updateStatus']);
 });
-

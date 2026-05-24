@@ -13,5 +13,6 @@ class CreditCheckData
     public function __construct(
         public readonly int $loanApplicationId,
         public readonly ?int $checkedByUserId = null,
+        public readonly ?string $remarks = null,
     ) {}
 }

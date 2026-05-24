@@ -37,7 +37,8 @@ class CreditCheckController extends Controller
             $application = $request->getLoanApplication();
             $dto = new CreditCheckData(
                 loanApplicationId: $application->id,
-                checkedByUserId: request()->user()?->id
+                checkedByUserId: request()->user()?->id,
+                remarks: $request->validated('remarks')
             );
 
             $credit_check = $this->service->calculateInternalScore($dto);
