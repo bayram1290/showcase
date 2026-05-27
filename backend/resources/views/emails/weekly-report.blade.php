@@ -38,6 +38,10 @@
                         <div class="status-label">Total Applications</div>
                     </div>
                     <div class="status-card">
+                        <div class="status-value">{{ $report_data['applications']['submitted'] }}</div>
+                        <div class="status-label">Submitted</div>
+                    </div>
+                    <div class="status-card">
                         <div class="status-value">{{ $report_data['applications']['approved'] }}</div>
                         <div class="status-label">Approved</div>
                     </div>
@@ -60,7 +64,7 @@
                         <div class="status-label">Weekly Disbursement</div>
                     </div>
                     <div class="status-card">
-                        <div class="status-value">${{ number_format($report_data['payments']->weekly_collections ?? 0, 0) }}</div>
+                        <div class="status-value">${{ number_format($report_data['payments']['weekly_payments'] ?? 0, 0) }}</div>
                         <div class="status-label">Weekly Collections</div>
                     </div>
                     <div class="status-card">
@@ -68,7 +72,7 @@
                         <div class="status-label">Total Outstanding</div>
                     </div>
                     <div class="status-card">
-                        <div class="status-value">${{ number_format($report_data['payments']->weekly_overdue ?? 0, 0) }}</div>
+                        <div class="status-value">${{ number_format($report_data['payments']['weekly_overdue'] ?? 0, 0) }}</div>
                         <div class="status-label">Weekly Overdue</div>
                     </div>
                 </div>
@@ -78,27 +82,30 @@
                 <h3 class="report-title"> Customer Growth</h3>
                 <div class="stats-grid">
                     <div class="status-card">
-                        <div class="status-value">{{ $report_data['users']['new_customers'] }}</div>
+                        <div class="status-value">{{ $report_data['customers']['new_customers'] }}</div>
                         <div class="status-label">New Customers</div>
                     </div>
                     <div class="status-card">
-                        <div class="status-value">{{ $report_data['users']['total_customers'] }}</div>
-                        <div class="status-label">Total Customers</div>
+                        <div class="status-value">{{ $report_data['customers']['active_customers'] }}</div>
+                        <div class="status-label">Active Customers</div>
                     </div>
                     <div class="status-card">
                         <div class="status-value">{{ $report_data['loans']['new_accounts'] }}</div>
                         <div class="status-label">New Loan Accounts</div>
                     </div>
+                    <div class="status-card">
+                        <div class="status-value">{{ $report_data['customers']['total_customers'] }}</div>
+                        <div class="status-label">Total Customers</div>
+                    </div>
                 </div>
             </div>
-
-            @if(count($report_data['top_products']) > 0)
+            @if(count($report_data['loan_capital']) > 0)
                 <div class="section">
                     <h3 class="report-title"> Top Loan Products</h3>
                     <table class="table">
                         <thead>
                             <tr>
-                                <th>Product</th>
+                                <th>Loan Product</th>
                                 <th>Applications</th>
                                 <th>Total Amount</th>
                             </tr>

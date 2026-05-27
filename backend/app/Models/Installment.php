@@ -104,11 +104,6 @@ class Installment extends Model
         }
     }
 
-    public function isOverdue($amount = null): bool
-    {
-        return $this->due_date < today() && $this->status === 'pending';
-    }
-
     public function addLateFee($fee): void
     {
         $this->update([

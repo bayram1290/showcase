@@ -12,18 +12,18 @@ class WeeklyReportMail extends Mailable
 {
     use Queueable, SerializesModels;
 
-    public $report_data;
+    public array $reportData;
 
     public function __construct(
-        $report_data
+        array $reportData
     ) {
-        $this->report_data = $report_data;
+        $this->reportData = $reportData;
     }
 
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: "Weekly loan system report - {$this->report_data['period']}",
+            subject: "Weekly loan system report - {$this->reportData['period']}",
         );
     }
 
@@ -32,18 +32,8 @@ class WeeklyReportMail extends Mailable
         return new Content(
             view: 'emails.weekly-report',
             with: [
-                    'report_data' => $this->report_data,
+                    'report_data' => $this->reportData,
                 ]
         );
-    }
-
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, \Illuminate\Mail\Mailables\Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
     }
 }

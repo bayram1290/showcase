@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -102,6 +103,13 @@ class User extends Authenticatable
         return $this->role === 'admin';
     }
 
+    public static function scopeActive(Builder $query): Builder
+    {
+        return $query
+            ->where('is_active', true)
+            ->where('is_locked', false);
+    }
+
     public function recordLogin(): void
     {
         $this->update([
@@ -132,4 +140,8 @@ class User extends Authenticatable
         return $admin_public_fields[$field];
     }
 
+    public function getSystemManagers(): Builder
+    {
+        return self::active()->where('role', 'manager');
+    }
 }
