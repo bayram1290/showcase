@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -68,24 +69,45 @@ class User extends Authenticatable
         return $this->hasMany(AuditLog::class, 'user_id');
     }
 
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(BankBranch::class);
+    }
+
     public function getFullNameAttribute(): string
     {
         return $this->first_name . ' ' . $this->last_name;
     }
 
-    public function isAdmin()
+    public function isAdmin(): bool
     {
         return $this->role === 'admin';
     }
 
-    public function isLoanOfficer()
+    public function isLoanOfficer(): bool
     {
         return $this->role === 'loan_officer';
     }
 
-    public function isModerator()
+    public function isModerator(): bool
     {
-    return $this->role === 'moderator';
+        return $this->role === 'moderator';
+    }
+
+    public function isSupervisor(): bool
+    {
+        return $this->role === 'supervisor';
+    }
+
+    public function isManager(): bool
+    {
+        return $this->role === 'manager';
+    }
+
+    // check if the user is a headquarter manager
+    public function isHeadquarterManager(): bool
+    {
+        return $this->bank_branch?->isHeadquarters() ?? false;
     }
 
     public function canReviewApplications(): bool

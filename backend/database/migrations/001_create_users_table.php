@@ -19,7 +19,7 @@ return new class extends Migration
            $table->string('first_name');
            $table->string('last_name');
            $table->string('phone')->nullable();
-           $table->enum('role', ['admin', 'loan_officer', 'moderator', 'officer', 'cashier', 'manager'])->default('officer');
+           $table->enum('role', ['admin', 'loan_officer', 'moderator', 'officer', 'cashier', 'supervisor', 'manager'])->default('officer');
            $table->string('department')->nullable();
            $table->string('employee_id')->unique()->nullable();
            $table->date('date_of_joining')->nullable();

@@ -39,9 +39,9 @@ class RepaymentController extends Controller
     {
         try {
 
-            $installment->load('loanAccount.loanApplication');
             $user = $request->user() ?? request()->user();
             $this->authorizeForUser($user, 'updateInstallmentForRepayment', $installment);
+            $installment->load('loanAccount.loanApplication');
 
             $installment_dto = RepaymentData::fromRequest($request, $installment);
             $installment = $this->service->performRepayment($installment_dto);

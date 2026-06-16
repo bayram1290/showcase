@@ -16,6 +16,7 @@ use App\Http\Controllers\API\{
     // BorrowerController,
     DisbursementController,
     RepaymentController,
+    DashboardReportController
 };
 
 Route::get('loan-products', [LoanProductController::class, 'index']);
@@ -111,6 +112,21 @@ Route::prefix('borrower')->group(function () {
 Route::prefix('loan-accounts')->middleware('auth:sanctum')->group(function() {
     Route::get('/{application:application_uuid}/show', [LoanAccountController::class, 'showInstallments'])->middleware(['role:loan_officer,officer,supervisor'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
     Route::post('/{installment:installment_uuid}/repayment', [RepaymentController::class, 'makeRepayment'])->middleware(['role:cashier']);
+});
+
+// TODO: Test these routes for real data on tables
+Route::middleware('auth:sanctum')->prefix('reports')->group(function () {
+    Route::get('/dashboard', [DashboardReportController::class, 'dashboard'])
+        ->middleware(['role:manager', 'throttle:30,1']);
+
+    Route::get('/approved-loans', [DashboardReportController::class, 'approvedLoans'])
+        ->middleware(['role:manager,supervisor', 'throttle:60,1']);
+
+    Route::get('/npa', [DashboardReportController::class, 'npaLoans'])
+            ->middleware(['role:manager,supervisor', 'throttle:60,1']);
+
+    Route::get('/export/approved-loans', [DashboardReportController::class, 'exportApprovedLoans'])
+            ->middleware(['role:manager,supervisor', 'throttle:10,1']);
 });
 
 // Moderator routes
