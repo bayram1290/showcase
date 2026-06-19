@@ -16,7 +16,8 @@ use App\Http\Controllers\API\{
     // BorrowerController,
     DisbursementController,
     RepaymentController,
-    DashboardReportController
+    DashboardReportController,
+    LoanPerformanceController
 };
 
 Route::get('loan-products', [LoanProductController::class, 'index']);
@@ -53,7 +54,7 @@ Route::middleware(['auth:sanctum', 'role:loan_officer,officer'])->group(function
     Route::get('/user/credit-check/{application:application_uuid}', [CreditCheckController::class, 'checkForApplication'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
 });
 
-// Loan application management routes
+// Loan application management routes, 1-st phase
 Route::prefix('applications/management')->group(function() {
 
     Route::middleware(['auth:sanctum', 'role:loan_officer,officer'])->group(function() {
@@ -64,6 +65,7 @@ Route::prefix('applications/management')->group(function() {
     });
 });
 
+// Loan application management routes, 2-st phase
 Route::middleware(['auth:sanctum', 'role:loan_officer,supervisor'])->group(function() {
     Route::prefix('applications/management')->group(function() {
         Route::get('/pending', [LoanApplicationController::class, 'pendingApplications']);
@@ -109,10 +111,19 @@ Route::prefix('borrower')->group(function () {
     });
 });
 
-Route::prefix('loan-accounts')->middleware('auth:sanctum')->group(function() {
-    Route::get('/{application:application_uuid}/show', [LoanAccountController::class, 'showInstallments'])->middleware(['role:loan_officer,officer,supervisor'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
-    Route::post('/{installment:installment_uuid}/repayment', [RepaymentController::class, 'makeRepayment'])->middleware(['role:cashier']);
+Route::prefix('loan-accounts')->group(function() {
+
+    Route::middleware('auth:sanctum')->group(function(){
+        Route::get('/{application:application_uuid}/show', [LoanAccountController::class, 'showInstallments'])->middleware(['role:loan_officer,officer,supervisor'])->where('application_uuid', config('helper.api_route.app_uuid_regex'));
+        Route::post('/{installment:installment_uuid}/repayment', [RepaymentController::class, 'makeRepayment'])->middleware(['role:cashier']);
+    });
+
+    Route::middleware('auth:sanctum,borrower')->group(function(){
+        Route::get('/{loanAccount}/performance', [LoanPerformanceController::class, 'show'])->middleware(['throttle:60,1']);
+    });
+    // Route::get('/{loanAccount}/performance', [LoanPerformanceController::class, 'show'])->middleware(['role:loan_officer,supervisor', 'throttle:60,1']);
 });
+
 
 // TODO: Test these routes for real data on tables
 Route::middleware('auth:sanctum')->prefix('reports')->group(function () {

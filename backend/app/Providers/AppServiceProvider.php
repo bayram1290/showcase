@@ -15,6 +15,8 @@ use App\Contracts\Repositories\LoanAccountRepositoryInterface;
 use App\Repositories\LoanAccountRepository;
 use App\Contracts\Services\ReportServiceInterface;
 use App\Services\ReportService;
+use App\Contracts\Services\LoanPerformanceServiceInterface;
+use App\Services\LoanPerformanceService;
 
 use App\Policies\ReportPolicy;
 use Illuminate\Support\Facades\Gate;
@@ -32,8 +34,8 @@ class AppServiceProvider extends ServiceProvider
         $this->app->bind(ApprovalWorkflowServiceInterface::class, ApprovalWorkflowService::class);
         $this->app->bind(DisbursementServiceInterface::class, DisbursementService::class);
         $this->app->bind(LoanAccountRepositoryInterface::class, LoanAccountRepository::class);
-
         $this->app->bind(ReportServiceInterface::class, ReportService::class);
+        $this->app->bind(LoanPerformanceServiceInterface::class, LoanPerformanceService::class);
     }
 
     /**
@@ -45,5 +47,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view-report-approved-loans', [ReportPolicy::class, 'viewApprovedLoans']);
         Gate::define('view-report-npa', [ReportPolicy::class, 'viewNpa']);
         Gate::define('export-approved-reports', [ReportPolicy::class, 'exportApprovedReports']);
+        Gate::define('view-performance', [LoanAccountRepository::class, 'viewPerformance']);
     }
 }

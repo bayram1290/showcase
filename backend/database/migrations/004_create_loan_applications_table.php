@@ -41,7 +41,7 @@ return new class extends Migration
             $table->integer('review_score')->nullable()->comment('0-100 score based on eligibility');
             $table->string('disbursement_method')->nullable();
             $table->string('bank_account_number')->nullable();
-            $table->string('bank_branch');
+            $table->integer('bank_branch');
             $table->string('bank_iban')->nullable()->comment('International Bank Account Number');
             $table->text('rejection_reason')->nullable();
             $table->timestamp('submitted_at')->nullable();

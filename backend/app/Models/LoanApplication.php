@@ -71,6 +71,7 @@ class LoanApplication extends Model
         return 'application_uuid';
     }
 
+    // Relationships
     public function borrower(): BelongsTo
     {
         return $this->belongsTo(Borrower::class);
@@ -106,6 +107,13 @@ class LoanApplication extends Model
         return $this->hasMany(AuditLog::class);
     }
 
+    public function bankBranch(): BelongsTo
+    {
+        return $this->belongsTo(BankBranch::class, 'bank_branch');
+    }
+
+
+    // Scopes
     public function scopePending(Builder $query): Builder
     {
         return $query->where('status', 'submitted');
@@ -120,6 +128,8 @@ class LoanApplication extends Model
     {
         return $query->where('status', 'approved');
     }
+
+    // Accessors and Mutators
 
     /**
      * Calculate the monthly installment amount for a loan based on the principal amount, interest rate, and tenure.

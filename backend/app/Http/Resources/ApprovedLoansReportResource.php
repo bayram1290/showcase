@@ -25,7 +25,7 @@ class ApprovedLoansReportResource extends JsonResource
      * - disbursed_since => the formatted time since disbursal, or 'Not Disbursed' if not disbursed
      * - status => the value of the 'status' property
      * - assigned_officer => the full name of the assigned officer, or null if not assigned
-     * - bank_branch => the name of the assigned bank branch, or 'Not Assigned' if not assigned
+     * - bank_branch => Id of the bank branch
      * - is_high_value => 'Yes' if the amount is greater than or equal to the high value loan amount, or 'No' otherwise
      *
      * If an exception occurs during the conversion process, an array with an 'error' key and the exception message is returned.

@@ -11,16 +11,16 @@ interface ApprovalWorkflowServiceInterface
     /**
      * Approve loan application
      *
-     * @param \App\DataTransferObjects\ApprovalData $data
-     * @return \App\Models\LoanApplication
+     * @param ApprovalData $data
+     * @returnLoanApplication
      */
     public function approve(ApprovalData $data): LoanApplication;
 
     /**
      * Reject loan application
      *
-     * @param \App\DataTransferObjects\ApprovalData $data
-     * @return \App\Models\LoanApplication
+     * @param ApprovalData $data
+     * @returnLoanApplication
      */
     public function reject(ApprovalData $data): LoanApplication;
 
@@ -28,7 +28,7 @@ interface ApprovalWorkflowServiceInterface
      * Get pending loan applications
      *
      * @param array $filters
-     * @return \Illuminate\Contracts\Pagination\LengthAwarePaginator
+     * @return LengthAwarePaginator
      */
     public function getPendingApplications(array $filters = []): LengthAwarePaginator;
 }
