@@ -22,6 +22,7 @@ use App\Http\Controllers\API\{
 
 Route::get('loan-products', [LoanProductController::class, 'index']);
 Route::get('loan-products/{id}', [LoanProductController::class, 'show']);
+Route::get('/documents/download/{document:uuid}', [DocumentController::class, 'downloadFile'])->name('documents.download'); // Signed Download Route (public – signature validated)
 
 // System user auth routes
 Route::prefix('user')->group(function (){
@@ -44,9 +45,6 @@ Route::prefix('admin')->middleware(['auth:sanctum', 'role:admin'])->group(functi
 
 // Loan officer and officer routes
 Route::middleware(['auth:sanctum', 'role:loan_officer,officer'])->group(function() {
-
-    Route::post('/documents/{document}/verify', [DocumentController::class, 'verify']);
-    // Route::post('/applications/{application:application_uuid}/management-restore', [LoanApplicationController::class, 'managerRestore']);
 
     // Credit check routes
     Route::post('/credit-check/internal', [CreditCheckController::class, 'internalCheck']);
@@ -75,6 +73,11 @@ Route::middleware(['auth:sanctum', 'role:loan_officer,supervisor'])->group(funct
     });
 });
 
+Route::middleware(['auth:sanctum', 'role:loan_officer,supervisor'])->group(function (){
+    Route::get('/applications/{application:application_uuid}/documents', [DocumentController::class, 'index']);
+    Route::post('/documents/{document:uuid}/verify', [DocumentController::class, 'verify']);
+});
+
 // Borrower routes
 Route::prefix('borrower')->group(function () {
     Route::post('/register', [BorrowerAuthController::class, 'register']);
@@ -96,8 +99,13 @@ Route::prefix('borrower')->group(function () {
             Route::post('/{application:application_uuid}/cancel', [LoanApplicationController::class, 'cancel']);
             Route::post('/{application:application_uuid}/restore', [LoanApplicationController::class, 'restoreToDraft']);
 
-            Route::post('/{application:application_uuid}/documents', [DocumentController::class, 'upload']);
-            Route::delete('/{application:application_uuid}/documents/{document}', [DocumentController::class, 'delete']);
+            Route::prefix('/{application:application_uuid}/documents')->group(function (){
+                Route::get('/', [DocumentController::class, 'index']);
+                route::post('/', [DocumentController::class, 'upload'])
+                ->middleware('throttle:documents.upload'); //Upload document (rate limited 15 per day application)
+                Route::get('/{document:uuid}/download', [DocumentController::class, 'download']);
+                Route::delete('/{document:uuid}', [DocumentController::class, 'destroy']);
+            });
         });
 
         // Credit check route
@@ -121,9 +129,7 @@ Route::prefix('loan-accounts')->group(function() {
     Route::middleware('auth:sanctum,borrower')->group(function(){
         Route::get('/{loanAccount}/performance', [LoanPerformanceController::class, 'show'])->middleware(['throttle:60,1']);
     });
-    // Route::get('/{loanAccount}/performance', [LoanPerformanceController::class, 'show'])->middleware(['role:loan_officer,supervisor', 'throttle:60,1']);
 });
-
 
 // TODO: Test these routes for real data on tables
 Route::middleware('auth:sanctum')->prefix('reports')->group(function () {

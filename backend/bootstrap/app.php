@@ -12,6 +12,8 @@ use App\Jobs\ProcessDailyInstallmentsJob;
 use App\Jobs\GenerateMonthlyStatements;
 use App\Jobs\GenerateWeeklyReport;
 
+use App\Console\Commands\MakeCustomMigration;
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
@@ -116,4 +118,58 @@ return Application::configure(basePath: dirname(__DIR__))
                     ]
                 );
             });
-    })->create();
+
+        $schedule->command('documents:purge-deleted')
+            ->dailyAt('03:00')
+            ->onOneServer()
+            ->onFailure(function (Throwable $exception) {
+                $error_message = 'An error occurred while purging soft-deleted documents: ' . $exception->getMessage();
+                $error_trace = $exception->getTraceAsString();
+                Log::error(
+                    $error_message,
+                    [
+                        'trace' => $error_trace,
+                        'exception_class' => get_class($exception),
+                        'exception_message' => $exception->getMessage(),
+                    ]
+                );
+            });
+
+        $schedule->command('document:scan-poll')
+            ->hourly()
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->onFailure(function (Throwable $exception) {
+                $error_message = 'An error occurred while polling for document scans: ' . $exception->getMessage();
+                $error_trace = $exception->getTraceAsString();
+                Log::error(
+                    $error_message,
+                    [
+                        'trace' => $error_trace,
+                        'exception_class' => get_class($exception),
+                        'exception_message' => $exception->getMessage(),
+                    ]
+                );
+            });
+
+        $schedule->command('document:scan-cleanup')
+            ->daily()
+            ->withoutOverlapping()
+            ->onOneServer()
+            ->onFailure(function (Throwable $exception) {
+                $error_message = 'An error occurred while cleaning up document scans: ' . $exception->getMessage();
+                $error_trace = $exception->getTraceAsString();
+                Log::error(
+                    $error_message,
+                    [
+                        'trace' => $error_trace,
+                        'exception_class' => get_class($exception),
+                        'exception_message' => $exception->getMessage(),
+                    ]
+                );
+            });
+    })
+    ->withCommands([
+        MakeCustomMigration::class,
+    ])
+    ->create();

@@ -74,7 +74,7 @@ class NotificationService
             'Application reference' => $application->application_ref,
             'Borrower name' => $borrower->gender === 'M' ? 'Mr. ': 'Ms./Mrs. ' . $borrower->first_name . ' ' . $borrower->last_name,
             'Loan amount' => $application->loan_amount,
-            'Loan type' => $application->loan_type ?? 'N/A',
+            'Loan type' => $application->loanProduct->type ?? 'N/A',
             'Loan purpose' => $application->loan_purpose ?? 'N/A',
             'Loan term' => $application->tenure . ' months',
             'Submitted at' => $application->submitted_at ? Carbon::parse($application->submitted_at)->format('d-m-Y H:i:s') : Carbon::now()->format('d-m-Y H:i:s')

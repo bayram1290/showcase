@@ -29,7 +29,6 @@ return new class extends Migration
                 'disbursed',
                 'closed'
             ])->default('draft');
-            $table->enum('loan_type', ['personal', 'business', 'education', 'auto', 'mortgage'])->nullable();
             $table->text('purpose')->nullable();
             $table->json('application_data')->nullable()->comment('All application form data'); // Stores all form data
             $table->decimal('monthly_installment', 10, 2)->nullable();

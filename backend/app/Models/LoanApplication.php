@@ -50,7 +50,6 @@ class LoanApplication extends Model
         'reviewed_at',
         'closed_at',
         'borrower_id',
-        'loan_type'
     ];
 
     protected $casts = [

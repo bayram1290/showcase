@@ -42,7 +42,7 @@ class OfficerAssignmentService
      */
     public function shouldAssignOfficer(LoanApplication $application): bool
     {
-        return is_null($application->assigned_officer_id) && $application->status === 'draft' && in_array($application->loan_type, ['personal', 'education']);
+        return is_null($application->assigned_officer_id) && $application->status === 'draft' && in_array($application->loanProduct->type, ['personal', 'education']);
     }
 
     /**

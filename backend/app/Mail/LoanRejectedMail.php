@@ -25,7 +25,7 @@ class LoanRejectedMail extends Mailable
         $this->data = [
             'borrower_name' => $application->borrower->getFullName(),
             'borrower_gender' => $application->borrower->gender,
-            'loan_type' => $application->loan_type,
+            'loan_type' => $application->loanProduct->type,
             'application_ref' => $application->application_ref,
             'amount' => number_format(floatval($application->amount), 2),
             'rejecter_name' => $rejecter->getFullName(),

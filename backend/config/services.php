@@ -37,6 +37,13 @@ return [
     'api' => [
         'app_debug_mode' => env('APP_DEBUG'),
         'app_env_mode' => env('APP_ENV'),
-    ]
+    ],
+    'virustotal' => [
+        'api_key' => env('VIRUSTOTAL_API_KEY'),
+        'api_url' => env('VIRUSTOTAL_API_URL'),
+        'api_analysis_url' => env('VIRUSTOTAL_API_ANALYSIS_URL'),
+        'polls_per_minute' => (int) env('VIRUSTOTAL_POLLS_PER_MINUTE', 4),
+        'rate_key' => 'virustotal_poll'
+    ],
 
 ];

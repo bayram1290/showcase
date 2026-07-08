@@ -23,7 +23,6 @@ class CreateLoanApplicationRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'type' => 'required|in:personal,mortgage,auto,business,education',
             'loan_product_id' => 'required|exists:loan_products,id',
             'amount' => 'required|numeric|min:1',
             'tenure' => 'required|integer|in:' . implode(',', config('helper.loan.tenure_options')),
@@ -45,23 +44,6 @@ class CreateLoanApplicationRequest extends FormRequest
      */
     protected function prepareForValidation(): void
     {
-        if ($this->has('type')) {
-            $loan_type = match ($this->input('type')) {
-                1 => 'personal',
-                2 => 'business',
-                3 => 'education',
-                4 => 'auto',
-                5 => 'mortgage',
-                default => 0
-            };
-
-            if ($loan_type == 0) {
-                throw new \Exception('Invalid loan type');
-            }
-
-            $this->merge(['type' => $loan_type]);
-        }
-
         if ($this->has('bank_branch')) {
             if (is_numeric($this->input('bank_branch'))) $this->merge(['bank_branch' => (int) $this->input('bank_branch')]);
             else throw new \Exception('Invalid bank branch');

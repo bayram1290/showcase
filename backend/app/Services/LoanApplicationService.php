@@ -76,7 +76,6 @@ class LoanApplicationService
         }
 
         $application = LoanApplication::create([
-            'loan_type' => $data['type'],
             'borrower_id' => $borrower->id,
             'loan_product_id' => $product->id,
             'application_ref' => 'DRAFT-' . Str::random(10),
