@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use Illuminate\Database\Seeder;
+use Illuminate\Support\Str;
+
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Database\Seeder;
 
 class UserSeeder extends Seeder
 {
@@ -129,6 +131,32 @@ class UserSeeder extends Seeder
             'date_of_joining' => Carbon::now()->subDays(24),
             'is_active' => 1,
             'branch_id' => 2
+        ]);
+
+        User::create([
+            'login' => 'system',
+            'email' => 'system@demo_a.com',
+            'password' => bcrypt(Str ::random(32)),
+            'first_name' => 'System',
+            'last_name' => 'Account',
+            'role' => 'system',
+            'employee_id' => 'SYS001',
+            'department' => 'System',
+            'date_of_joining' => Carbon::now(),
+            'is_active' => 1,
+        ]);
+
+        User::create([
+            'login' => 'collector1',
+            'email' => 'collector@demo_a.com',
+            'password' => bcrypt('collector123'),
+            'first_name' => 'Travis',
+            'last_name' => 'Moore',
+            'role' => 'collector',
+            'employee_id' => 'COL001',
+            'department' => 'Financial Department',
+            'date_of_joining' => Carbon::now(),
+            'is_active' => 1,
         ]);
     }
 }

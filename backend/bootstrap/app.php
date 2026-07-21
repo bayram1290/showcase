@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Log;
 use App\Jobs\ProcessDailyInstallmentsJob;
 use App\Jobs\GenerateMonthlyStatements;
 use App\Jobs\GenerateWeeklyReport;
+use App\Jobs\CheckExpiringNegotiationsJob;
+use App\Jobs\EnforceExpiredNegotiationsJob;
 
 use App\Console\Commands\MakeCustomMigration;
 
@@ -168,6 +170,9 @@ return Application::configure(basePath: dirname(__DIR__))
                     ]
                 );
             });
+
+        $schedule->job(new CheckExpiringNegotiationsJob())->dailyAt('09:00');
+        $schedule->job(new EnforceExpiredNegotiationsJob())->dailyAt('00:30');
     })
     ->withCommands([
         MakeCustomMigration::class,

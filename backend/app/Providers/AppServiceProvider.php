@@ -21,17 +21,20 @@ use App\Contracts\Services\DocumentServiceInterface;
 use App\Services\DocumentService;
 use App\Models\User;
 
-use App\Policies\ReportPolicy;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\ServiceProvider;
-use App\Helpers\ApiResponse;
-use Symfony\Component\HttpFoundation\Response;
-
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Cache\RedisStore;
 use Illuminate\Cache\RateLimiting\Limit;
+use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Support\Facades\Log;
+
+use App\Policies\ReportPolicy;
+use App\Policies\ReceivablesPolicy;
+use App\Helpers\ApiResponse;
+use App\Models\Installment;
+use App\Models\LoanAccount;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -60,6 +63,8 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('view-report-npa', [ReportPolicy::class, 'viewNpa']);
         Gate::define('export-approved-reports', [ReportPolicy::class, 'exportApprovedReports']);
         Gate::define('view-performance', [LoanAccountRepository::class, 'viewPerformance']);
+        Gate::policy(LoanAccount::class, ReceivablesPolicy::class);
+        Gate::policy(Installment::class, ReceivablesPolicy::class);
 
         // Rate Limiter for upload document
         RateLimiter::for('documents.upload', function () {

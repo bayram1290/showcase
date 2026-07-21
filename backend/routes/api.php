@@ -17,8 +17,15 @@ use App\Http\Controllers\API\{
     DisbursementController,
     RepaymentController,
     DashboardReportController,
-    LoanPerformanceController
+    LoanPerformanceController,
+    Receivables\NegotiationController,
+    Receivables\OverdueController,
+    Receivables\LateFeeController,
+    Receivables\ReminderController,
+    Receivables\DefaultController,
 };
+
+
 
 Route::get('loan-products', [LoanProductController::class, 'index']);
 Route::get('loan-products/{id}', [LoanProductController::class, 'show']);
@@ -129,6 +136,15 @@ Route::prefix('loan-accounts')->group(function() {
     Route::middleware('auth:sanctum,borrower')->group(function(){
         Route::get('/{loanAccount}/performance', [LoanPerformanceController::class, 'show'])->middleware(['throttle:60,1']);
     });
+});
+
+Route::middleware(['auth:sanctum', 'role:collector,loan_officer,supervisor'])->prefix('collections')->group(function () {
+    Route::get('/overdue-installments', [OverdueController::class, 'index']);
+    Route::post('/installments/{installment}/waive-late-fee', [LateFeeController::class, 'waive']);
+    Route::post('/installments/{installment}/send-reminder', [ReminderController::class, 'send']);
+    Route::post('/loans/{loanAccount}/negotiate', [NegotiationController::class, 'store']);
+    Route::post('/loans/{loanAccount}/mark-default', [DefaultController::class, 'mark']);
+    Route::post('/loans/{loanAccount}/restore', [DefaultController::class, 'restore']);
 });
 
 // TODO: Test these routes for real data on tables
