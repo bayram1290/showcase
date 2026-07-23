@@ -13,6 +13,7 @@ return new class extends Migration
     {
         Schema::create('loan_accounts', function (Blueprint $table) {
             $table->id();
+            $table->uuid('account_uuid')->unique()->index();
             $table->string('account_number')->unique();
             $table->decimal('disbursed_amount', 12, 2);
             $table->decimal('outstanding_balance', 12, 2);

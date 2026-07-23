@@ -2,15 +2,29 @@
 
 namespace App\Models;
 
-use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Str;
+
+use Carbon\Carbon;
+
 
 class LoanAccount extends Model
 {
+    protected static function boot(): void
+    {
+        parent::boot();
+
+        self::creating(function ($model) {
+            $model->account_uuid = Str::uuid();
+            $model->account_number = $model->generateAccountNumber();
+        });
+    }
+
     protected $fillable = [
+        'account_uuid',
         'loan_application_id',
         'account_number',
         'disbursed_amount',
@@ -31,6 +45,11 @@ class LoanAccount extends Model
         'next_installment_date' => 'date',
         'closed_at' => 'date'
     ];
+
+    public function getRouteKey(): string
+    {
+        return 'account_uuid';
+    }
 
     public function loanApplication(): BelongsTo
     {

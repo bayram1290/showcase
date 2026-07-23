@@ -4,10 +4,12 @@ namespace App\Services;
 
 use Illuminate\Http\Request;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+
 use App\Models\LoanProduct;
 use App\Models\User;
 use App\Models\Borrower;
-use DB;
 use Exception;
 
 class LoanProductService
@@ -89,7 +91,7 @@ class LoanProductService
      * @param LoanProduct $product
      * @param User|Borrower $user
      *
-     * @return array
+     * @return Collection
      *
      * @throws \Exception
      */
@@ -113,7 +115,7 @@ class LoanProductService
                 return LoanProduct::create($data);
             });
         } catch (Exception $e) {
-            \Log::error('Loan product creation failed: ' . $e->getMessage());
+            Log::error('Loan product creation failed: ' . $e->getMessage());
             throw new Exception('Could not create loan product. Please try again.');
         }
     }
@@ -137,7 +139,7 @@ class LoanProductService
             });
             return $product;
         } catch (Exception $e) {
-            \Log::error('Loan product update failed: ' . $e->getMessage());
+            Log::error('Loan product update failed: ' . $e->getMessage());
             throw new Exception('Could not update loan product. Please try again.');
         }
     }
@@ -166,7 +168,7 @@ class LoanProductService
                 $product->delete();
             });
         } catch (Exception $e) {
-            \Log::error('Loan product deletion failed: ' . $e->getMessage());
+            Log::error('Loan product deletion failed: ' . $e->getMessage());
             throw new Exception('Could not delete loan product. Please try again or contact support.');
         }
     }
@@ -188,7 +190,7 @@ class LoanProductService
             });
 
         } catch (Exception $e) {
-            \Log::error('Loan product status update failed: ' . $e->getMessage());
+            Log::error('Loan product status update failed: ' . $e->getMessage());
             throw new Exception('Could not update the status of loan product. Please try again.');
         }
     }
